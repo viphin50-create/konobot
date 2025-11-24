@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ассистент-Консультант KONO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js для 3D анимации -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .chat-message-bubble { max-width: 85%; }
+        .user-bubble { background-color: #10b981; color: white; border-radius: 1.5rem 0.5rem 1.5rem 1.5rem; }
+        .assistant-bubble { background-color: #ffffff; color: #1f2937; border-radius: 0.5rem 1.5rem 1.5rem 1.5rem; }
+        .loading-dot { animation: bounce 0.6s infinite alternate; }
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { to { opacity: 0.5; transform: translateY(-5px); } }
+
+        /* Контейнер для 3D сцены */
+        #assistant-3d-container {
+            width: 100%;
+            height: 150px;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+        #assistant-3d-container canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+    <!-- Firebase Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db = null;
+        let auth = null;
+        let userId = null;
+        
+        // Define functions globally for access from the main script
+        window.initFirebase = async () => {
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config is missing. Persistence will be disabled.");
+                return;
+            }
+
+            try {
+                setLogLevel('Debug');
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authentication
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase Auth successful. User ID:", userId);
+                        window.startChatListener();
+                    } else {
+                        console.log("No user signed in.");
+                        userId = null;
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+            }
+        };
+
+        window.db = () => db;
+        window.auth = () => auth;
+        window.getUserId = () => userId;
+        window.addChatMessage = addChatMessage;
+        
+        function getChatCollectionRef() {
+            if (!db || !userId) return null;
+            // Private data path: /artifacts/{appId}/users/{userId}/recommendation_chats
+            const path = `artifacts/${appId}/users/${userId}/recommendation_chats`;
+            return collection(db, path);
+        }
+
+        async function addChatMessage(role, text, isFromSnapshot = false) {
+            window.assistantChat.push({ role, text });
+            
+            if (db && userId && !isFromSnapshot) {
+                try {
+                    await addDoc(getChatCollectionRef(), {
+                        role: role,
+                        text: text,
+                        timestamp: Date.now()
+                    });
+                    console.log("Message saved to Firestore.");
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                }
+            }
+            window.renderMessages();
+        }
+
+        window.startChatListener = () => {
+            if (!db || !userId) return;
+
+            // Используем orderBy для правильной сортировки по времени
+            const q = query(getChatCollectionRef(), orderBy("timestamp"));
+
+            onSnapshot(q, (snapshot) => {
+                let initialLoad = window.assistantChat.length === 0;
+                let messagesFromSnapshot = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    messagesFromSnapshot.push(data);
+                });
+
+                // Если новый снимок содержит больше сообщений или это первая загрузка, обновляем чат
+                if (messagesFromSnapshot.length !== window.assistantChat.length || initialLoad) {
+                    messagesFromSnapshot.sort((a, b) => a.timestamp - b.timestamp);
+                    window.assistantChat = messagesFromSnapshot.map(m => ({ role: m.role, text: m.text }));
+                    window.renderMessages();
+                    
+                    if (window.assistantChat.length === 0) {
+                        // Если история пуста, отправляем приветствие от KONO-консультанта
+                        addChatMessage('assistant', "Здравствуйте! Добро пожаловать в KONO! Я ваш Консультант, который поможет собрать идеальный рамен. Вы у нас впервые? Ищете что-то поострее или помягче?", true);
+                    }
+                }
+            });
+        };
+
+        window.addEventListener('load', window.initFirebase);
+    </script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-2 bg-gray-50 md:p-4">
+
+    <!-- Telegram Mini App Wrapper -->
+    <div class="w-full max-w-2xl bg-white shadow-xl rounded-3xl flex flex-col h-[95vh] md:h-[90vh]">
+        <!-- Header -->
+        <header class="p-4 bg-emerald-600 text-white rounded-t-3xl shadow-md flex items-center justify-between">
+            <h1 class="text-xl font-bold">Консультант KONO</h1>
+            <div id="user-id-display" class="text-xs opacity-75 hidden sm:block">
+                ID: <span id="user-id-val">Загрузка...</span>
+            </div>
+            <!-- Placeholder for Telegram Close button -->
+            <!-- <button onclick="window.Telegram.WebApp.close()" class="p-1 rounded-full hover:bg-emerald-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button> -->
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-hidden p-3 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+            
+            <!-- Animated Assistant Display (3D) -->
+            <div class="w-full md:w-1/3 flex flex-col items-center p-2 bg-gray-100 rounded-2xl shadow-inner order-first md:order-none">
+                <div class="text-center mb-2">
+                    <h2 class="text-lg font-semibold text-gray-700">Ваш 3D Ассистент</h2>
+                </div>
+                
+                <!-- 3D Canvas Container -->
+                <div id="assistant-3d-container"></div>
+
+                <div id="status-message" class="mt-2 text-center text-sm text-gray-500 h-8">
+                    Готов слушать
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="w-full md:w-2/3 flex flex-col space-y-3 overflow-y-auto pr-2 order-last md:order-none">
+                <!-- Messages will be injected here by JS -->
+                <div class="flex justify-start">
+                    <div class="assistant-bubble p-3 shadow-md text-gray-500 italic text-sm">
+                        Загрузка истории чата...
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Input Area -->
+        <footer class="p-3 border-t border-gray-200 bg-white rounded-b-3xl">
+            <form id="chat-form" class="flex items-center space-x-3">
+                <input type="text" id="user-input" placeholder="Введите ваш выбор (например: 'помягче' или 'кимчи')..."
+                       class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 transition duration-150 shadow-sm text-sm"
+                       autocomplete="off" required>
+                <button type="submit" id="send-button"
+                        class="p-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition duration-150 disabled:bg-gray-400 flex-shrink-0">
+                    Отправить
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <script>
+        // --- Core Application Logic ---
+        const API_KEY = ""; // Key is provided by the environment
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+        
+        window.assistantChat = []; 
+        let isWaitingForResponse = false;
+        const chatMessagesEl = document.getElementById('chat-messages');
+        const inputEl = document.getElementById('user-input');
+        const formEl = document.getElementById('chat-form');
+        const sendButton = document.getElementById('send-button');
+        const statusMessageEl = document.getElementById('status-message');
+        const userIdValEl = document.getElementById('user-id-val');
+        
+        // --- System Instruction for KONO Consultant (Based on PDF files) ---
+        const systemPrompt = `
+            Ты — дружелюбный и экспертный Консультант сети KONO. Твоя задача — выступать в роли "проводника гостя в новый гастрономический опыт", помогая ему собрать идеальный рамен, а также ненавязчиво повышать средний чек.
+            
+            **Правила и Цели (Скрипты и Приоритеты KONO):**
+            1. **Начало:** Начни с квалификации гостя: "Вы у нас впервые? Ищете что-то поострее или помягче? С бульоном или без?".
+            2. **Базовая Рекомендация:** Начни с рекомендации основы (лапши), используя триггер "Хит продаж" или "Классика" (например, "Это топ, гости всегда возвращаются за этим!").
+            3. **Апселл Топпингов (Приоритет):** Твоя главная цель — продать **2-3 топпинга** (минимум 2).
+                * **Приоритетные топпинги (с высоким спросом):** Сыр чеддер, грибы, мини-сосиски, кимчи, яйцо, бекон, моцарелла, сулугуни, курица.
+                * **Как предлагать:** Фокусируйся на **сочетаниях вкусов** и **выгоде**, а не просто на "добавке". Используй фразы типа: "К этой лапше отлично подходит [Топпинг 1] и [Топпинг 2], вместе получается насыщенный вкус, как в Корее!" или "С топпингами рамен получается сытнее и гораздо интереснее."
+            4. **Кросс-Селл (Второй Приоритет):** После выбора топпингов ненавязчиво предложи:
+                * **Готовую Еду/Закуски:** Корейский чикен, онигири. (Используй "Окно ожидания": "Пока рамен готовится, идеальный компаньон: [Чикен/Онигири]").
+                * **Напитки/Десерты:** Молоко (банановое молоко - хорошо смягчает остроту) и Десерты (Моти/Котики - идеально после острого рамена). Цель: 0,3 шт. на 1 рамен.
+            5. **Коммуникация:**
+                * Используй **эмоциональные/маркетинговые триггеры:** "Это берут чаще всего", "Будет вкусно, как в Корее", "Эту позицию разбирают быстрее всех!".
+                * **Нельзя:** Быть навязчивым, продавать "в лоб" ("Возьмите ещё топпинги"), упрекать гостя, навязывать способ готовки.
+            6. **Финализация:** Повтори заказ, чтобы закрепить ценность (например: "Потрясающий набор! Итак, у нас [Лапша] с [Топпинг 1, 2, 3]...").
+            
+            Твой ответ должен быть чистым текстом, без форматирования Markdown, чтобы он красиво отображался в чате.
+            Вся информация о продуктах и рекомендациях должна основываться на стандартах и скриптах KONO.
+        `;
+        // --- END System Instruction ---
+
+
+        // --- Three.js 3D Assistant Setup ---
+        window.onload = function () {
+            initFirebase(); // Инициализация Firebase
+            init3DScene();  // Инициализация 3D сцены
+        };
+
+        let scene, camera, renderer, assistantMesh, clock, mixer;
+
+        function init3DScene() {
+            const container = document.getElementById('assistant-3d-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Сцена
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf1f5f9); // light-gray-100
+
+            // Камера
+            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            camera.position.set(0, 0.7, 3);
+            
+            // Рендерер
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Свет (Ambient Light)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+            scene.add(ambientLight);
+
+            // Направленный свет
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+            directionalLight.position.set(2, 5, 3);
+            scene.add(directionalLight);
+
+            // Создание простого 3D Ассистента (Стилизованный Консультант)
+            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 32);
+            const headGeometry = new THREE.SphereGeometry(0.7, 32, 32);
+            const materialBody = new THREE.MeshPhongMaterial({ color: 0x10b981 }); // emerald-600
+            const materialHead = new THREE.MeshPhongMaterial({ color: 0x374151 }); // dark grey
+
+            const body = new THREE.Mesh(bodyGeometry, materialBody);
+            body.position.set(0, 0, 0);
+
+            const head = new THREE.Mesh(headGeometry, materialHead);
+            head.position.set(0, 1.25, 0);
+            
+            // Глаз (для фокуса)
+            const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.25, 1.25, 0.65);
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.25, 1.25, 0.65);
+
+            assistantMesh = new THREE.Group();
+            assistantMesh.add(body);
+            assistantMesh.add(head);
+            assistantMesh.add(eye1);
+            assistantMesh.add(eye2);
+            assistantMesh.position.y = -0.5;
+            scene.add(assistantMesh);
+
+            clock = new THREE.Clock();
+            animate3D();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('assistant-3d-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // Простая анимация "дыхания" (подъем и опускание)
+            assistantMesh.position.y = -0.5 + Math.sin(time * 2) * 0.05;
+
+            // Небольшой "интерес" (поворот головы)
+            assistantMesh.rotation.y = Math.sin(time * 0.5) * 0.2;
+
+            renderer.render(scene, camera);
+        }
+        // --- END Three.js Setup ---
+
+
+        /**
+         * Renders all messages in the chat history.
+         */
+        window.renderMessages = () => {
+            chatMessagesEl.innerHTML = '';
+            
+            // Show the user ID if available
+            const currentUserId = window.getUserId ? window.getUserId() : null; 
+            if (currentUserId) {
+                userIdValEl.textContent = currentUserId.substring(0, 8) + '...';
+            }
+
+            window.assistantChat.forEach(msg => {
+                const isUser = msg.role === 'user';
+                const containerClass = isUser ? 'justify-end' : 'justify-start';
+                const bubbleClass = isUser ? 'user-bubble' : 'assistant-bubble';
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${containerClass}`;
+                messageDiv.innerHTML = `
+                    <div class="chat-message-bubble p-3 shadow-md ${bubbleClass}">
+                        ${msg.text.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+                chatMessagesEl.appendChild(messageDiv);
+            });
+            // Scroll to the latest message
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        };
+        
+        /**
+         * Displays a simple loading animation.
+         */
+        const showLoading = (isLoading) => {
+            isWaitingForResponse = isLoading;
+            inputEl.disabled = isLoading;
+            sendButton.disabled = isLoading;
+            sendButton.innerHTML = isLoading 
+                ? `<div class="flex space-x-1 items-center">
+                     <span class="loading-dot w-2 h-2 bg-white rounded-full"></span>
+                     <span class="loading-dot w-2 h-2 bg-white rounded-full"></span>
+                     <span class="loading-dot w-2 h-2 bg-white rounded-full"></span>
+                   </div>`
+                : 'Отправить';
+            
+            statusMessageEl.innerHTML = isLoading ? '<span class="text-emerald-600 font-semibold">Ассистент думает...</span>' : 'Готов слушать';
+        };
+
+        /**
+         * Calls the Gemini API to get the assistant's response.
+         */
+        const getAssistantResponse = async (userMessage) => {
+            if (isWaitingForResponse) return;
+            showLoading(true);
+
+            // Add user message to local history and firestore
+            window.addChatMessage('user', userMessage);
+            
+            // Format chat history for the API call (excluding the hardcoded initial assistant greeting which is not saved to DB)
+            const contents = window.assistantChat.map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.text }]
+            }));
+            
+            const payload = {
+                contents: contents,
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                // Google Search for grounding recommendations is useful
+                tools: [{ "google_search": {} }], 
+            };
+            
+            // Exponential backoff retry function
+            const fetchWithRetry = async (url, options, maxRetries = 5) => {
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(url, options);
+                        if (response.ok) return response;
+                        
+                        if (response.status === 429 || response.status >= 500) {
+                            if (i === maxRetries - 1) throw new Error(`API failed after ${maxRetries} retries: ${response.statusText}`);
+                            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        }
+                        
+                        throw new Error(`API error: ${response.status} ${response.statusText}`);
+                    } catch (error) {
+                        if (i === maxRetries - 1) throw error;
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            };
+            
+            try {
+                const response = await fetchWithRetry(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                let assistantText = "Извините, у меня возникли трудности с получением ответа от Консультанта KONO. Пожалуйста, попробуйте сформулировать запрос иначе.";
+                
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    assistantText = candidate.content.parts[0].text;
+                }
+                
+                // Add assistant response to local history and firestore
+                window.addChatMessage('assistant', assistantText);
+
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                const errorMessage = "Извините, произошла ошибка подключения к сервису рекомендаций. Пожалуйста, попробуйте снова.";
+                window.addChatMessage('assistant', errorMessage);
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        // --- Event Listener ---
+        formEl.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = inputEl.value.trim();
+            if (message && !isWaitingForResponse) {
+                inputEl.value = '';
+                getAssistantResponse(message);
+            }
+        });
+
+    </script>
+</body>
+</html>
