@@ -11,20 +11,18 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            /* Установлен мягкий бежевый фон для body */
-            background-color: #eae7d8; 
+            /* Цвет фона, совпадающий с GIF и карточкой */
+            background-color: #fcf8e3; 
             display: flex;
             justify-content: center;
             align-items: center;
             /* Убеждаемся, что приложение занимает всю доступную высоту (например, в мини-аппе) */
             min-height: 100vh;
-            /* Добавлено: Убираем излишние отступы, которые могут быть на мобильных */
             margin: 0; 
         }
         
         /* --- СТИЛИ ДЛЯ КАРТОЧКИ ПРИЛОЖЕНИЯ --- */
         .glass-card {
-            /* Установлен ТОЧНЫЙ цвет фона #fcf8e3 (без прозрачности) */
             background-color: #fcf8e3; 
             border: 1px solid rgba(0, 0, 0, 0.05); 
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); 
@@ -33,9 +31,8 @@
         
         /* Стили для заставки */
         #splash-screen {
-            /* Сохранен цвет #fcf8e3 для идеального совпадения с GIF */
             background-color: #fcf8e3;
-            /* 🔑 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Занимает 100% ВЬЮПОРТА */
+            /* КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Занимает 100% ВЬЮПОРТА */
             position: fixed;
             top: 0;
             left: 0;
@@ -104,11 +101,10 @@
 <body>
 
     <!-- Заставка запуска приложения (SPLASH SCREEN) -->
-    <!-- 🔑 КОНФИГУРАЦИЯ ДЛЯ ПОЛНОЭКРАННОСТИ -->
     <div id="splash-screen" class="opacity-100">
+        <!-- 🔑 ИСПОЛЬЗУЕМ GIF для ПОЛНОЭКРАННОГО ЗАПУСКА. URL установлен здесь, чтобы избежать отображения заглушки -->
         <img id="splash-image" 
-               src="https://image2url.com/gifs/1764689574733-bed67147-df97-48ca-a70f-f2651896a28a.gif" 
-               onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=Фото+Нет';"
+               src="https://image2url.com/gifs/1764696570536-12f987ea-6660-42ff-af90-59b247680c26.gif" 
                alt="Полноэкранная анимация маскота Коно"
                class="w-full h-full object-cover">
     </div>
@@ -174,10 +170,10 @@
             { id: 'saeu_tangmyeon', name_ru: 'Сэу Танмён (Креветочный)', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка'] },
             { id: 'tushed_chicken', name_ru: 'Тушеная курица', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Курица', toppings_ru: [] },
             { id: 'neoguri', name_ru: 'Неогури', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка'] },
+            // ИСПРАВЛЕНИЕ ОШИБКИ: PLACEHELDER_IMAGE заменено на PLACEHOLDER_IMAGE
             { id: 'pasta_with_garlic', name_ru: 'Паста с чесноком', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Паста', toppings_ru: ['Лук жареный'] },
             { id: 'pasta_with_cheese', name_ru: 'Паста с сыром', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Карбонара', toppings_ru: ['Лук вареный'] },
             { id: 'chan_ramen', name_ru: 'Чан Рамён', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: [] },
-            /* Опечатка исправлена: "PLACEER_IMAGE" на "PLACEHOLDER_IMAGE" */
             { id: 'ship_ramen_spicy', name_ru: 'Шип Рамён острый', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Средняя', baseFlavor_ru: 'Говядина', toppings_ru: ['Черные грибы', 'Лук жареный'] }, 
             { id: 'carbonara', name_ru: 'Карбонара', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Карбонара', toppings_ru: [] },
         ];
@@ -190,15 +186,18 @@
             { key: 'baseFlavor_ru', prompt_ru: "Отлично. А какой вкус вы ищете сегодня?", options_source: "dynamic_from_filter" }
         ];
 
-        // --- КОНФИГУРАЦИЯ GIF МАСКОТА ---
-        const videoUrls = {
-            // Оригинальная GIF-ссылка для стартового экрана и приветствия (Шаг 0)
-            'greeting': 'https://image2url.com/gifs/1764683955171-0477faf0-168c-4bc0-9783-131ea540089f.gif', 
-            // GIF-ссылка для вопросов и заставки
-            'questionGif': 'https://image2url.com/gifs/1764689574733-bed67147-df97-48ca-a70f-f2651896a28a.gif',
-            'placeholder': 'https://placehold.co/16x9/0d1117/ffffff?text=ТЕКСТ' // Заглушка
-        };
-
+        // --- КОНФИГУРАЦИЯ GIF МАСКОТА (3 РАЗНЫХ АНИМАЦИИ) ---
+        // 🔑 Launch: Полный экран на старте (URL установлен в HTML)
+        const konoLaunchGifUrl = 'https://image2url.com/gifs/1764696570536-12f987ea-6660-42ff-af90-59b247680c26.gif'; 
+        // 🔑 Greeting: Аватар на Шаге 0 (Приветствие)
+        const konoGreetingGifUrl = 'https://image2url.com/gifs/1764696020110-4cd7d218-14c8-4f51-8233-14208e95f64e.gif';
+        // 🔑 Question: Аватар на Шаге 1+ (Выбор)
+        const konoQuestionGifUrl = 'https://image2url.com/gifs/1764696307418-26635021-448f-4588-b4d1-acb956135531.gif';
+        // 🔑 Result: Аватар для финального экрана
+        const konoResultGifUrl = 'https://image2url.com/gifs/1764696953299-dfe22cd0-366c-4b4e-9e36-f35ffd3cdcc1.gif';
+        // 🔑 Thinking Process: Новый GIF для промежуточного экрана (пользовательский)
+        const konoThinkingProcessGifUrl = 'https://image2url.com/gifs/1764697051373-6b6eb8f1-8dbe-4b79-b965-f4d2bd98a068.gif'; 
+        
         // --- STATE AND DOM ELEMENTS ---
         let noodleDatabase = []; 
         let currentState = {
@@ -220,14 +219,6 @@
             });
         }
         
-        function isPlaceholderUrl(url) {
-            return !url || url.includes('placehold.co');
-        }
-
-        function isGifUrl(url) {
-            return url.toLowerCase().endsWith('.gif');
-        }
-
         /**
          * Устанавливает главный контент в интерактивную область.
          */
@@ -256,8 +247,8 @@
          * Отображает начальный экран или GIF-приветствие.
          */
         function renderStartScreen() {
-            // Используем 'greeting' GIF для стартового экрана (Шаг 0)
-            const gifUrl = videoUrls['greeting'];
+            // 🔑 Используем Greeting GIF для стартового экрана (Шаг 0)
+            const gifUrl = konoGreetingGifUrl;
             
             // Новый HTML для стартового экрана с маскотом-аватаром
             let contentHTML = `
@@ -283,8 +274,8 @@
          * Рендерит текущий вопрос и кнопки выбора. (Обновлено для диалогового стиля)
          */
         function renderQuestionStep(question, options) {
-            // Используем 'questionGif' для шагов с вопросами (Шаг 1 и далее)
-            const gifUrl = videoUrls['questionGif']; 
+            // 🔑 Используем Question GIF для шагов с вопросами (Шаг 1 и далее)
+            const gifUrl = konoQuestionGifUrl; 
             
             // HTML для отображения вопроса в формате диалога
             let questionHTML = `
@@ -325,17 +316,17 @@
         }
         
         /**
-         * Отображает финальный результат (рекомендацию или ошибку) в виде карточек.
+         * Отображает промежуточный результат (список из нескольких вариантов).
          */
         function renderResult() {
             let resultHTML = '';
             
             if (currentState.step === -1 && currentState.availableNoodles.length > 0) {
-                // УСПЕШНЫЙ РЕЗУЛЬТАТ: Отображаем ВСЕ найденные варианты
+                // УСПЕШНЫЙ ПРОМЕЖУТОЧНЫЙ РЕЗУЛЬТАТ: Отображаем ВСЕ найденные варианты
                 const resultCount = currentState.availableNoodles.length;
                 
                 if (resultCount === 1) {
-                    // Если остался 1, сразу переходим к финальному шагу (отображение топпингов)
+                    // Если остался 1, сразу переходим к "Думаю"
                     handleNoodleSelection(currentState.availableNoodles[0].id);
                     return;
                 } 
@@ -343,7 +334,7 @@
                 resultHTML += `
                     <div class="bg-green-100 p-4 rounded-xl shadow-lg border border-green-300 text-center mb-6">
                         <h2 class="text-2xl font-bold text-green-800">🎉 Отлично!</h2>
-                        <p class="text-gray-700 mt-2">Мы нашли **${resultCount}** вариантов, соответствующих вашим критериям. Выбирайте, какой вам больше нравится:</p>
+                        <p class="text-gray-700 mt-2">Мы нашли **${resultCount}** вариантов, соответствующих вашим критериям. Выберите лучший:</p>
                     </div>
                     <div class="space-y-4">
                 `;
@@ -392,47 +383,109 @@
             }
             renderControls();
         }
+        
+        /**
+         * Отображает промежуточный экран "Думаю" перед финальной рекомендацией.
+         */
+        function renderThinkingScreen(selectedNoodle) {
+            const gifUrl = konoThinkingProcessGifUrl;
+            
+            const thinkingHTML = `
+                <div class="text-center p-8 flex flex-col items-center justify-center min-h-[300px] fade-in">
+                    <!-- Mascot Thinking GIF -->
+                    <div class="flex justify-center mb-6">
+                        <img src="${gifUrl}" alt="Маскот Коно, думает над рекомендацией" 
+                             onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" 
+                             class="w-48 h-48 rounded-full object-cover border-4 border-indigo-400 p-0.5 shadow-xl">
+                    </div>
+
+                    <!-- Thinking Message -->
+                    <div class="bg-indigo-50 p-4 rounded-xl shadow-lg border-2 border-indigo-200">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">🤔 Я вас понял!</h2>
+                        <p class="text-xl text-indigo-600 font-semibold">Дайте подумать...</p>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div class="mt-4 flex items-center">
+                        <div class="spinner mr-3"></div>
+                        <p class="text-sm text-gray-500">Генерирую идеальный выбор...</p>
+                    </div>
+                </div>
+            `;
+            
+            setMainContent(thinkingHTML);
+            renderControls(); // Скрывает кнопку "Начать сначала" на время.
+
+            // Автоматический переход к финальной рекомендации через 4 секунды (4000 мс)
+            setTimeout(() => {
+                // Переходим к финальному рендерингу
+                currentState.step = -3; 
+                renderFinalRecommendation(selectedNoodle);
+            }, 4000); 
+        }
+
 
         /**
          * Отображает финальный экран с деталями.
          */
         function renderFinalRecommendation(selectedNoodle) {
+            // 🔑 Используем Result GIF для финального экрана
+            const gifUrl = konoResultGifUrl;
+            
              // 1. Выводим рекомендации по топпингам
             let toppingSuggestionHTML;
             if (selectedNoodle.toppings_ru.length > 0) {
                 const toppingsList = selectedNoodle.toppings_ru.map(t => `<li class="text-gray-700">${t}</li>`).join(''); 
                 toppingSuggestionHTML = `
-                    <p class="font-medium text-green-800 mb-2">К этому рамёну идеально подойдут:</p>
-                    <ul class="list-disc list-inside ml-4 mt-2 text-gray-700 text-sm space-y-1">${toppingsList}</ul>
+                    <p class="font-bold text-gray-900 mb-2 border-b pb-2">🥘 Рекомендованные топпинги:</p>
+                    <ul class="list-disc list-inside ml-4 mt-2 text-gray-700 text-base space-y-1">${toppingsList}</ul>
                 `;
             } else {
                 toppingSuggestionHTML = `
-                    <p class="font-medium text-green-800 mt-2">Нет специфических рекомендаций по топпингам. Можете выбрать любой по вкусу!</p>
+                    <p class="font-medium text-gray-600">Нет специфических рекомендаций по топпингам. Выбирайте любой по вкусу!</p>
                 `;
             }
 
             const finalHTML = `
-                <div class="p-6 bg-green-100 border border-green-300 rounded-xl shadow-2xl text-center fade-in">
-                    <h2 class="text-3xl font-extrabold text-green-900 mb-4">🏆 Ваш Идеальный Рамён!</h2>
-                    
-                    <div class="bg-white p-4 rounded-lg shadow-inner mb-4">
-                        <h3 class="text-2xl font-bold text-indigo-700">${selectedNoodle.name_ru}</h3>
-                    </div>
-                    
-                    <div class="text-left bg-white p-4 rounded-lg border border-gray-100 shadow-sm mb-4">
-                        <p class="text-lg font-semibold text-gray-800 mb-2">Детали блюда:</p>
-                        <ul class="space-y-1 text-base text-gray-600">
-                            <li><span class="font-medium">Способ:</span> ${selectedNoodle.preparation_ru}</li>
-                            <li><span class="font-medium">Острота:</span> ${selectedNoodle.spiceLevel_ru}</li>
-                            <li><span class="font-medium">Базовый вкус:</span> ${selectedNoodle.baseFlavor_ru}</li>
-                        </ul>
+                <div class="text-center fade-in">
+                    <!-- Mascot Thinking GIF (New Card-style Header) -->
+                    <div class="flex justify-center mb-6">
+                        <img src="${gifUrl}" alt="Маскот Коно, дающий рекомендацию" 
+                             onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" 
+                             class="w-40 h-40 rounded-full object-cover border-4 border-green-300 p-0.5 shadow-xl">
                     </div>
 
-                    <div class="text-left bg-white p-4 rounded-lg border border-gray-100 shadow-sm mb-6">
-                        ${toppingSuggestionHTML}
+                    <!-- Speech Bubble/Title -->
+                    <div class="bg-green-100 p-4 rounded-xl shadow-lg border-2 border-green-300 mb-6">
+                        <h2 class="text-2xl font-extrabold text-green-800">✅ Найдено!</h2>
+                        <p class="text-lg text-gray-700 mt-1">Идеальное блюдо для вас:</p>
                     </div>
 
-                    <p class="text-base text-gray-500 mt-4">💖 Спасибо за выбор! Если захотите найти что-то другое, воспользуйтесь кнопкой ниже.</p>
+                    <!-- Recommendation Card (Styled for clarity) -->
+                    <div class="p-6 bg-white rounded-2xl shadow-xl border border-gray-100 text-left">
+                        <h3 class="text-3xl font-bold text-indigo-700 mb-4 text-center border-b pb-3">${selectedNoodle.name_ru}</h3>
+                        
+                        <div class="grid grid-cols-2 gap-4 text-base text-gray-700 pt-2">
+                            <!-- Details -->
+                            <div class="col-span-1">
+                                <p class="font-semibold text-gray-900 mb-1">🍜 Способ:</p>
+                                <p>${selectedNoodle.preparation_ru}</p>
+                            </div>
+                            <div class="col-span-1">
+                                <p class="font-semibold text-gray-900 mb-1">🌶️ Острота:</p>
+                                <p>${selectedNoodle.spiceLevel_ru}</p>
+                            </div>
+                            <div class="col-span-2 mt-2">
+                                <p class="font-semibold text-gray-900 mb-1">🍲 Вкус:</p>
+                                <p>${selectedNoodle.baseFlavor_ru}</p>
+                            </div>
+                        </div>
+
+                        <!-- Toppings Section -->
+                        <div class="mt-6 pt-4 border-t border-gray-200">
+                            ${toppingSuggestionHTML} 
+                        </div>
+                    </div>
                 </div>
             `;
             setMainContent(finalHTML);
@@ -454,7 +507,7 @@
             } else if (currentState.step < 0) {
                  button = createButton('Начать сначала', restart, 'bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-full user-button flex items-center justify-center'); // Добавлен flex
             } 
-            // Кнопка не отображается на шагах с вопросами (1, 2, 3), так как кнопки выбора находятся в mainArea
+            // Кнопка не отображается на шагах с вопросами (1, 2, 3) и во время "думаю" (-4), так как кнопки выбора находятся в mainArea
 
             if (button) {
                 controlArea.appendChild(button);
@@ -469,14 +522,17 @@
          */
         async function startGreeting() {
             const splashScreen = document.getElementById('splash-screen');
+            const splashImage = document.getElementById('splash-image');
             const mainContent = document.getElementById('main-app-content');
             
-            // 1. Убеждаемся, что основной контент скрыт и показываем заставку
+            // 1. URL GIF для Launch/Splash установлен прямо в HTML.
+            
+            // 2. Убеждаемся, что основной контент скрыт и показываем заставку
             mainContent.classList.add('hidden');
             splashScreen.classList.remove('hidden');
             splashScreen.style.opacity = '1';
 
-            // 2. Асинхронная загрузка данных (с минимальной задержкой)
+            // 3. Асинхронная загрузка данных (с минимальной задержкой)
             const dataLoadPromise = loadNoodleDatabase();
             // Минимальное время отображения заставки (5000 мс)
             const minTimePromise = new Promise(resolve => setTimeout(resolve, 5000));
@@ -492,10 +548,10 @@
             // Инициализируем доступные варианты всей базой данных
             currentState.availableNoodles = [...noodleDatabase];
 
-            // 3. Плавное скрытие заставки
+            // 4. Плавное скрытие заставки
             splashScreen.style.opacity = '0';
             
-            // 4. Запуск приложения или показ ошибки, если база пуста
+            // 5. Запуск приложения или показ ошибки, если база пуста
             if (noodleDatabase.length === 0) {
                 currentState.step = -2;
                 mainContent.classList.remove('hidden');
@@ -507,7 +563,7 @@
                 renderStartScreen(); // Отображаем начальный экран (контент внутри будет анимирован через fade-in)
             }
             
-            // 5. Полностью скрываем элемент заставки после завершения fade-out
+            // 6. Полностью скрываем элемент заставки после завершения fade-out
             setTimeout(() => {
                 splashScreen.classList.add('hidden'); 
             }, transitionDuration); 
@@ -577,8 +633,8 @@
                 return;
             }
             
-            currentState.step = -3; // Финальный шаг
-            renderFinalRecommendation(selectedNoodle);
+            // Переходим к экрану "Думаю" перед финальной рекомендацией
+            renderThinkingScreen(selectedNoodle);
         }
 
         function restart() {
