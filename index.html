@@ -3,471 +3,496 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ассистент-Консультант KONO</title>
+    <title>Рамён-Помощник КОНО</title>
+    <!-- Подключение Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Three.js для 3D анимации -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Настройка шрифта Inter и стилей для красивого внешнего вида -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .chat-message-bubble { max-width: 85%; }
-        .user-bubble { background-color: #10b981; color: white; border-radius: 1.5rem 0.5rem 1.5rem 1.5rem; }
-        .assistant-bubble { background-color: #ffffff; color: #1f2937; border-radius: 0.5rem 1.5rem 1.5rem 1.5rem; }
-        .loading-dot { animation: bounce 0.6s infinite alternate; }
-        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes bounce { to { opacity: 0.5; transform: translateY(-5px); } }
-        
-        /* Контейнер для 3D сцены */
-        #assistant-3d-container {
-            width: 100%;
-            height: 150px;
-            border-radius: 1rem;
-            overflow: hidden;
-            position: relative;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-        #assistant-3d-container canvas {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
+        /* Custom scrollbar for main content area (if needed) */
+        #main-interaction-area {
+            min-height: 250px; /* Минимальная высота, чтобы не "прыгало" */
+        }
+        .user-button {
+            transition: all 0.2s;
+        }
+        .user-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
-    <!-- Firebase Imports -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db = null;
-        let auth = null;
-        let userId = null;
-        
-        // Define functions globally for access from the main script
-        window.initFirebase = async () => {
-            if (Object.keys(firebaseConfig).length === 0) {
-                console.error("Firebase config is missing. Persistence will be disabled.");
-                return;
-            }
-
-            try {
-                setLogLevel('Debug');
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // Authentication
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Firebase Auth successful. User ID:", userId);
-                        window.startChatListener();
-                    } else {
-                        console.log("No user signed in.");
-                        userId = null;
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-            }
-        };
-
-        window.db = () => db;
-        window.auth = () => auth;
-        window.getUserId = () => userId;
-        window.addChatMessage = addChatMessage;
-        
-        function getChatCollectionRef() {
-            if (!db || !userId) return null;
-            // Private data path: /artifacts/{appId}/users/{userId}/recommendation_chats
-            const path = `artifacts/${appId}/users/${userId}/recommendation_chats`;
-            return collection(db, path);
-        }
-
-        async function addChatMessage(role, text, isFromSnapshot = false) {
-            window.assistantChat.push({ role, text });
-            
-            if (db && userId && !isFromSnapshot) {
-                try {
-                    await addDoc(getChatCollectionRef(), {
-                        role: role,
-                        text: text,
-                        timestamp: Date.now()
-                    });
-                    console.log("Message saved to Firestore.");
-                } catch (e) {
-                    console.error("Error adding document: ", e);
-                }
-            }
-            window.renderMessages();
-        }
-
-        window.startChatListener = () => {
-            if (!db || !userId) return;
-
-            // Используем orderBy для правильной сортировки по времени
-            const q = query(getChatCollectionRef(), orderBy("timestamp"));
-
-            onSnapshot(q, (snapshot) => {
-                let initialLoad = window.assistantChat.length === 0;
-                let messagesFromSnapshot = [];
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    messagesFromSnapshot.push(data);
-                });
-
-                // Если новый снимок содержит больше сообщений или это первая загрузка, обновляем чат
-                if (messagesFromSnapshot.length !== window.assistantChat.length || initialLoad) {
-                    messagesFromSnapshot.sort((a, b) => a.timestamp - b.timestamp);
-                    window.assistantChat = messagesFromSnapshot.map(m => ({ role: m.role, text: m.text }));
-                    window.renderMessages();
-                    
-                    if (window.assistantChat.length === 0) {
-                        // Если история пуста, отправляем приветствие от KONO-консультанта
-                        addChatMessage('assistant', "Здравствуйте! Добро пожаловать в KONO! Я ваш Консультант, который поможет собрать идеальный рамен. Вы у нас впервые? Ищете что-то поострее или помягче?", true);
-                    }
-                }
-            });
-        };
-
-        window.addEventListener('load', window.initFirebase);
-    </script>
 </head>
-<body class="min-h-screen flex items-center justify-center p-2 bg-gray-50 md:p-4">
+<body>
 
-    <!-- Telegram Mini App Wrapper -->
-    <div class="w-full max-w-2xl bg-white shadow-xl rounded-3xl flex flex-col h-[95vh] md:h-[90vh]">
+    <div class="w-full max-w-lg mx-4 bg-white p-6 md:p-8 rounded-2xl shadow-2xl border border-gray-100">
         <!-- Header -->
-        <header class="p-4 bg-emerald-600 text-white rounded-t-3xl shadow-md flex items-center justify-between">
-            <h1 class="text-xl font-bold">Консультант KONO</h1>
-            <div id="user-id-display" class="text-xs opacity-75 hidden sm:block">
-                ID: <span id="user-id-val">Загрузка...</span>
-            </div>
-            <!-- Placeholder for Telegram Close button -->
-            <!-- <button onclick="window.Telegram.WebApp.close()" class="p-1 rounded-full hover:bg-emerald-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button> -->
+        <header class="mb-6 border-b pb-4">
+            <h1 class="text-3xl font-extrabold text-gray-800">🍜 Рамён-Помощник</h1>
+            <p class="text-sm text-gray-500">Ваш личный консультант по меню</p>
         </header>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-hidden p-3 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-            
-            <!-- Animated Assistant Display (3D) -->
-            <div class="w-full md:w-1/3 flex flex-col items-center p-2 bg-gray-100 rounded-2xl shadow-inner order-first md:order-none">
-                <div class="text-center mb-2">
-                    <h2 class="text-lg font-semibold text-gray-700">Ваш 3D Ассистент</h2>
-                </div>
-                
-                <!-- 3D Canvas Container -->
-                <div id="assistant-3d-container"></div>
-
-                <div id="status-message" class="mt-2 text-center text-sm text-gray-500 h-8">
-                    Готов слушать
-                </div>
+        <!-- Main Dynamic Interaction Area (Open Space) -->
+        <div id="main-interaction-area" class="space-y-6 pb-4 fade-in">
+            <!-- Content (Greeting, Questions, Results) will be injected here -->
+            <div id="loading-indicator" class="flex justify-center p-4 hidden">
+                <div class="spinner"></div>
+                <span class="ml-3 text-gray-500">Загрузка меню...</span>
             </div>
+        </div>
 
-            <!-- Chat Messages -->
-            <div id="chat-messages" class="w-full md:w-2/3 flex flex-col space-y-3 overflow-y-auto pr-2 order-last md:order-none">
-                <!-- Messages will be injected here by JS -->
-                <div class="flex justify-start">
-                    <div class="assistant-bubble p-3 shadow-md text-gray-500 italic text-sm">
-                        Загрузка истории чата...
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Input Area -->
-        <footer class="p-3 border-t border-gray-200 bg-white rounded-b-3xl">
-            <form id="chat-form" class="flex items-center space-x-3">
-                <input type="text" id="user-input" placeholder="Введите ваш выбор (например: 'помягче' или 'кимчи')..."
-                       class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 transition duration-150 shadow-sm text-sm"
-                       autocomplete="off" required>
-                <button type="submit" id="send-button"
-                        class="p-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition duration-150 disabled:bg-gray-400 flex-shrink-0">
-                    Отправить
-                </button>
-            </form>
-        </footer>
+        <!-- Control Buttons Area (Start/Restart only) -->
+        <div id="control-area" class="mt-6 pt-4 border-t border-gray-200 flex justify-center">
+            <!-- Start/Restart buttons will be injected here -->
+        </div>
     </div>
 
     <script>
-        // --- Core Application Logic ---
-        const API_KEY = ""; // Key is provided by the environment
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+        // --- DATA AND CONFIGURATION ---
         
-        window.assistantChat = []; 
-        let isWaitingForResponse = false;
-        const chatMessagesEl = document.getElementById('chat-messages');
-        const inputEl = document.getElementById('user-input');
-        const formEl = document.getElementById('chat-form');
-        const sendButton = document.getElementById('send-button');
-        const statusMessageEl = document.getElementById('status-message');
-        const userIdValEl = document.getElementById('user-id-val');
+        // URL-заглушка для отсутствующих фото
+        const PLACEHOLDER_IMAGE = "https://placehold.co/100x100/1e293b/ffffff?text=Фото+Нет";
         
-        // --- System Instruction for KONO Consultant (Based on PDF files) ---
-        const systemPrompt = `
-            Ты — дружелюбный и экспертный Консультант сети KONO. Твоя задача — выступать в роли "проводника гостя в новый гастрономический опыт", помогая ему собрать идеальный рамен, а также ненавязчиво повышать средний чек.
-            
-            **Правила и Цели (Скрипты и Приоритеты KONO):**
-            1. **Начало:** Начни с квалификации гостя: "Вы у нас впервые? Ищете что-то поострее или помягче? С бульоном или без?".
-            2. **Базовая Рекомендация:** Начни с рекомендации основы (лапши), используя триггер "Хит продаж" или "Классика" (например, "Это топ, гости всегда возвращаются за этим!").
-            3. **Апселл Топпингов (Приоритет):** Твоя главная цель — продать **2-3 топпинга** (минимум 2).
-                * **Приоритетные топпинги (с высоким спросом):** Сыр чеддер, грибы, мини-сосиски, кимчи, яйцо, бекон, моцарелла, сулугуни, курица.
-                * **Как предлагать:** Фокусируйся на **сочетаниях вкусов** и **выгоде**, а не просто на "добавке". Используй фразы типа: "К этой лапше отлично подходит [Топпинг 1] и [Топпинг 2], вместе получается насыщенный вкус, как в Корее!" или "С топпингами рамен получается сытнее и гораздо интереснее."
-            4. **Кросс-Селл (Второй Приоритет):** После выбора топпингов ненавязчиво предложи:
-                * **Готовую Еду/Закуски:** Корейский чикен, онигири. (Используй "Окно ожидания": "Пока рамен готовится, идеальный компаньон: [Чикен/Онигири]").
-                * **Напитки/Десерты:** Молоко (банановое молоко - хорошо смягчает остроту) и Десерты (Моти/Котики - идеально после острого рамена). Цель: 0,3 шт. на 1 рамен.
-            5. **Коммуникация:**
-                * Используй **эмоциональные/маркетинговые триггеры:** "Это берут чаще всего", "Будет вкусно, как в Корее", "Эту позицию разбирают быстрее всех!".
-                * **Нельзя:** Быть навязчивым, продавать "в лоб" ("Возьмите ещё топпинги"), упрекать гостя, навязывать способ готовки.
-            6. **Финализация:** Повтори заказ, чтобы закрепить ценность (например: "Потрясающий набор! Итак, у нас [Лапша] с [Топпинг 1, 2, 3]...").
-            
-            Твой ответ должен быть чистым текстом, без форматирования Markdown, чтобы он красиво отображался в чате.
-            Вся информация о продуктах и рекомендациях должна основываться на стандартах и скриптах KONO.
-        `;
-        // --- END System Instruction ---
-
-
-        // --- Three.js 3D Assistant Setup ---
-        window.onload = function () {
-            initFirebase(); // Инициализация Firebase
-            init3DScene();  // Инициализация 3D сцены
+        // Карта эмодзи для кнопок выбора
+        const optionIcons = {
+            // Способ приготовления
+            "С бульоном": "🍲",
+            "Без бульона": "🍜",
+            // Уровень остроты
+            "Не острая": "🟢",
+            "Средняя": "🌶️🌶️", 
+            "Острая": "🌶️🌶️🌶️",
+            // Базовый вкус
+            "Черные бобы": "⚫",
+            "Морепродукты": "🦐",
+            "Кимчи": "🥬",
+            "Курица": "🍗",
+            "Говядина": "🥩",
+            "Паста": "🍝",
+            "Карбонара": "🧀",
+            // Запасная иконка
+            "default": "✨"
         };
 
-        let scene, camera, renderer, assistantMesh, clock, mixer;
 
-        function init3DScene() {
-            const container = document.getElementById('assistant-3d-container');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
+        // ** СТАТИЧЕСКАЯ БАЗА ДАННЫХ МЕНЮ (ВШИТА В КОД ДЛЯ ИЗБЕЖАНИЯ ОШИБОК СЕТИ/CORS) **
+        const STATIC_RAMEN_DB = [
+            { id: 'chapagetti', name_ru: 'Чапагетти', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Черные бобы', toppings_ru: ['Нарутомаки', 'Сасими', 'Морепродукты'] },
+            { id: 'anson_tongmyeon', name_ru: 'Ансон Тонмён', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка', 'Лук жареный'] },
+            { id: 'kimchi_ramen', name_ru: 'Кимчи Рамен', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Кимчи', toppings_ru: ['Креветка', 'Нарутомаки'] },
+            { id: 'puldak_ramen', name_ru: 'Пулдак Рамён', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Курица', toppings_ru: ['Лук жареный'] },
+            { id: 'saeu_tangmyeon', name_ru: 'Сэу Танмён (Креветочный)', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка'] },
+            { id: 'tushed_chicken', name_ru: 'Тушеная курица', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Курица', toppings_ru: [] },
+            { id: 'neoguri', name_ru: 'Неогури', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка'] },
+            { id: 'pasta_with_garlic', name_ru: 'Паста с чесноком', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Паста', toppings_ru: ['Лук жареный'] },
+            { id: 'pasta_with_cheese', name_ru: 'Паста с сыром', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Карбонара', toppings_ru: ['Лук вареный'] },
+            { id: 'chan_ramen', name_ru: 'Чан Рамён', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: [] },
+            { id: 'ship_ramen_spicy', name_ru: 'Шип Рамён острый', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Средняя', baseFlavor_ru: 'Говядина', toppings_ru: ['Черные грибы', 'Лук жареный'] }, 
+            { id: 'carbonara', name_ru: 'Карбонара', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Карбонара', toppings_ru: [] },
+        ];
+        // ** КОНЕЦ СТАТИЧЕСКОЙ БАЗЫ ДАННЫХ **
 
-            // Сцена
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xf1f5f9); // light-gray-100
+        // Последовательность вопросов для диалога
+        const questionFlow = [
+            { key: 'preparation_ru', prompt_ru: "С чего начнем? Вы любите рамён **с бульоном** или предпочитаете **без бульона**?", options_ru: ["С бульоном", "Без бульона"] },
+            { key: 'spiceLevel_ru', prompt_ru: "Как насчет остроты? Выберите свой уровень:", options_ru: ["Не острая", "Средняя", "Острая"] },
+            { key: 'baseFlavor_ru', prompt_ru: "Отлично. А какой вкус вы ищете сегодня?", options_source: "dynamic_from_filter" }
+        ];
 
-            // Камера
-            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-            camera.position.set(0, 0.7, 3);
-            
-            // Рендерер
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            container.appendChild(renderer.domElement);
+        // --- КОНФИГУРАЦИЯ GIF МАСКОТА ---
+        const videoUrls = {
+            'greeting': 'https://image2url.com/gifs/1764683955171-0477faf0-168c-4bc0-9783-131ea540089f.gif', 
+            'placeholder': 'https://placehold.co/16x9/0d1117/ffffff?text=ТЕКСТ' // Заглушка
+        };
 
-            // Свет (Ambient Light)
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
-            scene.add(ambientLight);
+        // --- STATE AND DOM ELEMENTS ---
+        let noodleDatabase = []; 
+        let currentState = {
+            step: 0, 
+            filters: {},
+            availableNoodles: [],
+        };
 
-            // Направленный свет
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-            directionalLight.position.set(2, 5, 3);
-            scene.add(directionalLight);
+        const mainArea = document.getElementById('main-interaction-area');
+        const controlArea = document.getElementById('control-area');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        let gifTimeoutId = null; 
 
-            // Создание простого 3D Ассистента (Стилизованный Консультант)
-            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 32);
-            const headGeometry = new THREE.SphereGeometry(0.7, 32, 32);
-            const materialBody = new THREE.MeshPhongMaterial({ color: 0x10b981 }); // emerald-600
-            const materialHead = new THREE.MeshPhongMaterial({ color: 0x374151 }); // dark grey
-
-            const body = new THREE.Mesh(bodyGeometry, materialBody);
-            body.position.set(0, 0, 0);
-
-            const head = new THREE.Mesh(headGeometry, materialHead);
-            head.position.set(0, 1.25, 0);
-            
-            // Глаз (для фокуса)
-            const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            eye1.position.set(-0.25, 1.25, 0.65);
-            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            eye2.position.set(0.25, 1.25, 0.65);
-
-            assistantMesh = new THREE.Group();
-            assistantMesh.add(body);
-            assistantMesh.add(head);
-            assistantMesh.add(eye1);
-            assistantMesh.add(eye2);
-            assistantMesh.position.y = -0.5;
-            scene.add(assistantMesh);
-
-            clock = new THREE.Clock();
-            animate3D();
-
-            window.addEventListener('resize', onWindowResize);
+        // --- UTILITY FUNCTIONS ---
+        
+        async function loadNoodleDatabase() {
+            return new Promise(resolve => {
+                setTimeout(() => resolve(STATIC_RAMEN_DB), 100); 
+            });
+        }
+        
+        function isPlaceholderUrl(url) {
+            return !url || url.includes('placehold.co');
         }
 
-        function onWindowResize() {
-            const container = document.getElementById('assistant-3d-container');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(width, height);
+        function isGifUrl(url) {
+            return url.toLowerCase().endsWith('.gif');
         }
-
-        function animate3D() {
-            requestAnimationFrame(animate3D);
-
-            const delta = clock.getDelta();
-            const time = clock.getElapsedTime();
-
-            // Простая анимация "дыхания" (подъем и опускание)
-            assistantMesh.position.y = -0.5 + Math.sin(time * 2) * 0.05;
-
-            // Небольшой "интерес" (поворот головы)
-            assistantMesh.rotation.y = Math.sin(time * 0.5) * 0.2;
-
-            renderer.render(scene, camera);
-        }
-        // --- END Three.js Setup ---
-
 
         /**
-         * Renders all messages in the chat history.
+         * Устанавливает главный контент в интерактивную область.
          */
-        window.renderMessages = () => {
-            chatMessagesEl.innerHTML = '';
+        function setMainContent(html) {
+            mainArea.innerHTML = html;
+        }
+
+        /**
+         * Создает стандартную кнопку ответа.
+         * Добавлены классы для flex-контейнера, чтобы центрировать иконку и текст.
+         */
+        function createButton(text, onClick, classes = 'bg-white text-gray-800 border-2 border-indigo-200 hover:bg-indigo-100 font-medium py-3 px-6 rounded-xl user-button flex-grow text-center flex items-center justify-center') {
+            const btn = document.createElement('button');
+            const icon = optionIcons[text] || optionIcons['default'];
             
-            // Show the user ID if available
-            const currentUserId = window.getUserId ? window.getUserId() : null; 
-            if (currentUserId) {
-                userIdValEl.textContent = currentUserId.substring(0, 8) + '...';
-            }
+            // Используем innerHTML для вставки иконки (эмодзи) перед текстом
+            btn.innerHTML = `<span class="text-xl mr-2">${icon}</span> ${text}`;
+            btn.className = classes;
+            btn.onclick = onClick;
+            return btn;
+        }
 
-            window.assistantChat.forEach(msg => {
-                const isUser = msg.role === 'user';
-                const containerClass = isUser ? 'justify-end' : 'justify-start';
-                const bubbleClass = isUser ? 'user-bubble' : 'assistant-bubble';
+        // --- UI RENDERING FUNCTIONS ---
+        
+        /**
+         * Отображает начальный экран или GIF-приветствие.
+         */
+        function renderStartScreen() {
+            // HTML для приветствия
+            const gifUrl = videoUrls['greeting'];
+            
+            // Новый HTML для стартового экрана с маскотом-аватаром
+            let contentHTML = `
+                <div class="text-center p-4">
+                    <!-- Mascot as a slightly larger, centered avatar (w-36 h-36) -->
+                    <div class="flex justify-center mb-6">
+                        <img src="${gifUrl}" alt="Анимация маскота Коно" 
+                             onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" 
+                             class="w-36 h-36 rounded-full object-cover border-4 border-indigo-300 p-0.5 shadow-lg">
+                    </div>
+                    
+                    <h2 class="text-2xl font-extrabold text-indigo-700 mb-2">👋 Привет! Я Коно, твой Рамён-Помощник.</h2>
+                    <!-- Обновленный текст -->
+                    <p class="text-gray-500 mb-6">Нажми "Начать выбор", чтобы найти идеальное блюдо для тебя.</p>
+                </div>
+            `;
 
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `flex ${containerClass}`;
-                messageDiv.innerHTML = `
-                    <div class="chat-message-bubble p-3 shadow-md ${bubbleClass}">
-                        ${msg.text.replace(/\n/g, '<br>')}
+            setMainContent(contentHTML);
+            renderControls();
+        }
+
+        /**
+         * Рендерит текущий вопрос и кнопки выбора. (Обновлено для диалогового стиля)
+         */
+        function renderQuestionStep(question, options) {
+            const gifUrl = videoUrls['greeting']; 
+            
+            // HTML для отображения вопроса в формате диалога
+            let questionHTML = `
+                <!-- DIALOGUE CONTAINER -->
+                <div class="flex items-start mb-6 space-x-3 fade-in">
+                    <!-- Mascot Avatar (Konu) - увеличен до w-20 h-20 -->
+                    <div class="flex-shrink-0 w-20 h-20">
+                        <img src="${gifUrl}" alt="Маскот Коно" 
+                             onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" 
+                             class="w-full h-full rounded-full object-cover border-4 border-indigo-400 p-0.5 shadow-md">
+                    </div>
+                    
+                    <!-- Speech Bubble (Question) -->
+                    <div class="flex-grow bg-indigo-50 p-4 rounded-xl rounded-tl-none shadow-lg border-2 border-indigo-200">
+                        <p class="text-sm font-bold text-indigo-700 mb-1">КОНО (Шаг ${currentState.step}/${questionFlow.length})</p>
+                        <p class="text-xl font-semibold text-gray-800">${question.prompt_ru}</p>
+                    </div>
+                </div>
+                
+                <!-- OPTIONS CONTAINER -->
+                <div class="mt-4">
+                    <p class="text-sm text-gray-500 mb-3 ml-1">Выберите свой ответ:</p>
+                    <div id="option-buttons" class="flex flex-wrap gap-3">
+                        <!-- Buttons will be rendered here -->
+                    </div>
+                </div>
+            `;
+
+            setMainContent(questionHTML);
+            renderControls(); // Скрываем/показываем управление
+            
+            const optionButtonsArea = document.getElementById('option-buttons');
+            options.forEach(option => {
+                const btn = createButton(option, () => handleAnswer(question.key, option));
+                optionButtonsArea.appendChild(btn);
+            });
+        }
+        
+        /**
+         * Отображает финальный результат (рекомендацию или ошибку) в виде карточек.
+         */
+        function renderResult() {
+            let resultHTML = '';
+            
+            if (currentState.step === -1 && currentState.availableNoodles.length > 0) {
+                // УСПЕШНЫЙ РЕЗУЛЬТАТ: Отображаем ВСЕ найденные варианты
+                const resultCount = currentState.availableNoodles.length;
+                
+                if (resultCount === 1) {
+                    // Если остался 1, сразу переходим к финальному шагу (отображение топпингов)
+                    handleNoodleSelection(currentState.availableNoodles[0].id);
+                    return;
+                } 
+                
+                resultHTML += `
+                    <div class="bg-green-100 p-4 rounded-xl shadow-lg border border-green-300 text-center mb-6">
+                        <h2 class="text-2xl font-bold text-green-800">🎉 Отлично!</h2>
+                        <p class="text-gray-700 mt-2">Мы нашли **${resultCount}** вариантов, соответствующих вашим критериям. Выбирайте, какой вам больше нравится:</p>
+                    </div>
+                    <div class="space-y-4">
+                `;
+                
+                currentState.availableNoodles.forEach((noodle) => {
+                    const toppingsDisplay = noodle.toppings_ru.length > 0 ? noodle.toppings_ru.join(', ') : 'Нет';
+                    resultHTML += `
+                        <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-md fade-in flex flex-col sm:flex-row items-center sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                            <img src="${noodle.image}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
+                            <div class="w-full">
+                                <h3 class="text-xl font-bold text-indigo-700 mb-2 text-center sm:text-left">${noodle.name_ru}</h3>
+                                <div class="grid grid-cols-2 gap-y-1 gap-x-4 text-sm text-gray-700">
+                                    <p class="font-medium">Вкус: <span class="font-normal">${noodle.baseFlavor_ru}</span></p>
+                                    <p class="font-medium">Острота: <span class="font-normal">${noodle.spiceLevel_ru}</span></p>
+                                    <p class="font-medium">Способ: <span class="font-normal">${noodle.preparation_ru}</span></p>
+                                    <p class="font-medium col-span-2">Топпинги: <span class="font-normal">${toppingsDisplay}</span></p>
+                                </div>
+                            </div>
+                            <button onclick="handleNoodleSelection('${noodle.id}')" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-full mt-3 sm:mt-0 flex-shrink-0 user-button">
+                                Выбрать
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                resultHTML += `</div>`;
+                setMainContent(resultHTML);
+
+            } else {
+                // ОШИБКА/НЕТ СОВПАДЕНИЙ ИЛИ ПУСТАЯ БАЗА
+                let errorTitle = "🙁 Упс!";
+                let errorMessage = "К сожалению, по вашим предпочтениям не нашлось подходящей лапши. Попробуйте изменить один из критериев, или начните сначала!";
+                
+                if (noodleDatabase.length === 0) {
+                    errorTitle = "⚠️ Ошибка Базы Данных!";
+                    errorMessage = "Не удалось загрузить или обработать данные меню.";
+                }
+
+                let errorHTML = `
+                    <div class="p-6 bg-red-100 border border-red-300 rounded-xl shadow-lg text-center">
+                        <h2 class="text-2xl font-bold text-red-800 mb-3">${errorTitle}</h2>
+                        <p class="text-gray-700">${errorMessage}</p>
                     </div>
                 `;
-                chatMessagesEl.appendChild(messageDiv);
-            });
-            // Scroll to the latest message
-            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-        };
-        
-        /**
-         * Displays a simple loading animation.
-         */
-        const showLoading = (isLoading) => {
-            isWaitingForResponse = isLoading;
-            inputEl.disabled = isLoading;
-            sendButton.disabled = isLoading;
-            sendButton.innerHTML = isLoading 
-                ? `<div class="flex space-x-1 items-center">
-                     <span class="loading-dot w-2 h-2 bg-white rounded-full"></span>
-                     <span class="loading-dot w-2 h-2 bg-white rounded-full"></span>
-                     <span class="loading-dot w-2 h-2 bg-white rounded-full"></span>
-                   </div>`
-                : 'Отправить';
-            
-            statusMessageEl.innerHTML = isLoading ? '<span class="text-emerald-600 font-semibold">Ассистент думает...</span>' : 'Готов слушать';
-        };
+                setMainContent(errorHTML);
+            }
+            renderControls();
+        }
 
         /**
-         * Calls the Gemini API to get the assistant's response.
+         * Отображает финальный экран с деталями.
          */
-        const getAssistantResponse = async (userMessage) => {
-            if (isWaitingForResponse) return;
-            showLoading(true);
-
-            // Add user message to local history and firestore
-            window.addChatMessage('user', userMessage);
-            
-            // Format chat history for the API call (excluding the hardcoded initial assistant greeting which is not saved to DB)
-            const contents = window.assistantChat.map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.text }]
-            }));
-            
-            const payload = {
-                contents: contents,
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                // Google Search for grounding recommendations is useful
-                tools: [{ "google_search": {} }], 
-            };
-            
-            // Exponential backoff retry function
-            const fetchWithRetry = async (url, options, maxRetries = 5) => {
-                for (let i = 0; i < maxRetries; i++) {
-                    try {
-                        const response = await fetch(url, options);
-                        if (response.ok) return response;
-                        
-                        if (response.status === 429 || response.status >= 500) {
-                            if (i === maxRetries - 1) throw new Error(`API failed after ${maxRetries} retries: ${response.statusText}`);
-                            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            continue;
-                        }
-                        
-                        throw new Error(`API error: ${response.status} ${response.statusText}`);
-                    } catch (error) {
-                        if (i === maxRetries - 1) throw error;
-                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
-                }
-            };
-            
-            try {
-                const response = await fetchWithRetry(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-                const candidate = result.candidates?.[0];
-
-                let assistantText = "Извините, у меня возникли трудности с получением ответа от Консультанта KONO. Пожалуйста, попробуйте сформулировать запрос иначе.";
-                
-                if (candidate && candidate.content?.parts?.[0]?.text) {
-                    assistantText = candidate.content.parts[0].text;
-                }
-                
-                // Add assistant response to local history and firestore
-                window.addChatMessage('assistant', assistantText);
-
-            } catch (error) {
-                console.error("Gemini API call failed:", error);
-                const errorMessage = "Извините, произошла ошибка подключения к сервису рекомендаций. Пожалуйста, попробуйте снова.";
-                window.addChatMessage('assistant', errorMessage);
-            } finally {
-                showLoading(false);
+        function renderFinalRecommendation(selectedNoodle) {
+             // 1. Выводим рекомендации по топпингам
+            let toppingSuggestionHTML;
+            if (selectedNoodle.toppings_ru.length > 0) {
+                const toppingsList = selectedNoodle.toppings_ru.map(t => `<li class="text-gray-700">${t}</li>`).join(''); 
+                toppingSuggestionHTML = `
+                    <p class="font-medium text-green-800 mb-2">К этому рамёну идеально подойдут:</p>
+                    <ul class="list-disc list-inside ml-4 mt-2 text-gray-700 text-sm space-y-1">${toppingsList}</ul>
+                `;
+            } else {
+                toppingSuggestionHTML = `
+                    <p class="font-medium text-green-800 mt-2">Нет специфических рекомендаций по топпингам. Можете выбрать любой по вкусу!</p>
+                `;
             }
-        };
 
-        // --- Event Listener ---
-        formEl.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = inputEl.value.trim();
-            if (message && !isWaitingForResponse) {
-                inputEl.value = '';
-                getAssistantResponse(message);
+            const finalHTML = `
+                <div class="p-6 bg-green-100 border border-green-300 rounded-xl shadow-2xl text-center fade-in">
+                    <h2 class="text-3xl font-extrabold text-green-900 mb-4">🏆 Ваш Идеальный Рамён!</h2>
+                    
+                    <div class="bg-white p-4 rounded-lg shadow-inner mb-4">
+                        <h3 class="text-2xl font-bold text-indigo-700">${selectedNoodle.name_ru}</h3>
+                    </div>
+                    
+                    <div class="text-left bg-white p-4 rounded-lg border border-gray-100 shadow-sm mb-4">
+                        <p class="text-lg font-semibold text-gray-800 mb-2">Детали блюда:</p>
+                        <ul class="space-y-1 text-base text-gray-600">
+                            <li><span class="font-medium">Способ:</span> ${selectedNoodle.preparation_ru}</li>
+                            <li><span class="font-medium">Острота:</span> ${selectedNoodle.spiceLevel_ru}</li>
+                            <li><span class="font-medium">Базовый вкус:</span> ${selectedNoodle.baseFlavor_ru}</li>
+                        </ul>
+                    </div>
+
+                    <div class="text-left bg-white p-4 rounded-lg border border-gray-100 shadow-sm mb-6">
+                        ${toppingSuggestionHTML}
+                    </div>
+
+                    <p class="text-base text-gray-500 mt-4">💖 Спасибо за выбор! Если захотите найти что-то другое, воспользуйтесь кнопкой ниже.</p>
+                </div>
+            `;
+            setMainContent(finalHTML);
+            renderControls();
+        }
+
+        /**
+         * Рендерит кнопки управления (Начать / Начать сначала).
+         */
+        function renderControls() {
+            controlArea.innerHTML = '';
+
+            let button;
+            if (currentState.step === 0) {
+                button = createButton('Начать выбор', () => {
+                    currentState.step = 1;
+                    startNextStep();
+                }, 'bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-full w-full user-button flex items-center justify-center'); // Добавлен flex
+            } else if (currentState.step < 0) {
+                 button = createButton('Начать сначала', restart, 'bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-full user-button flex items-center justify-center'); // Добавлен flex
+            } 
+            // Кнопка не отображается на шагах с вопросами (1, 2, 3), так как кнопки выбора находятся в mainArea
+
+            if (button) {
+                controlArea.appendChild(button);
             }
-        });
+        }
+
+
+        // --- LOGIC FUNCTIONS ---
+
+        async function startGreeting() {
+            setMainContent('<div id="loading-indicator" class="flex justify-center p-4"><div class="spinner"></div><span class="ml-3 text-gray-500">Загрузка меню...</span></div>');
+            
+            noodleDatabase = await loadNoodleDatabase();
+            currentState.availableNoodles = [...noodleDatabase];
+            
+            if (noodleDatabase.length === 0) {
+                currentState.step = -2;
+                renderResult(); 
+                return;
+            }
+
+            currentState.step = 0;
+            renderStartScreen();
+        }
+
+        function handleAnswer(key, value) {
+            // Удаляем кнопки выбора после ответа
+            setMainContent('');
+
+            currentState.filters[key] = value;
+            currentState.availableNoodles = currentState.availableNoodles.filter(noodle => noodle[key] === value);
+            
+            currentState.step++;
+            startNextStep();
+        }
+
+        function startNextStep() {
+            // 1. Проверка на отсутствие совпадений
+            if (currentState.availableNoodles.length === 0) {
+                currentState.step = -2;
+                renderResult(); 
+                return;
+            }
+
+            // 2. Проверка на завершение вопросов
+            if (currentState.step > questionFlow.length) {
+                currentState.step = -1; // Переходим к выбору из нескольких
+                renderResult(); 
+                return;
+            }
+            
+            // 3. Обработка текущего вопроса
+            const currentQuestion = questionFlow[currentState.step - 1];
+            let options = currentQuestion.options_ru;
+            
+            if (currentQuestion.options_source === "dynamic_from_filter") {
+                const remainingFlavors = [...new Set(currentState.availableNoodles.map(n => n[currentQuestion.key]))];
+                options = remainingFlavors.sort(); 
+            }
+
+            if (options.length === 0) {
+                currentState.step = -2;
+                renderResult();
+                return;
+            }
+
+            // 4. Логика авто-перехода (если остался 1 вариант)
+            if (options.length === 1 && currentState.step < questionFlow.length) {
+                // Если остался только один вариант для следующего вопроса, автоматически выбираем его
+                currentState.filters[currentQuestion.key] = options[0];
+                currentState.availableNoodles = currentState.availableNoodles.filter(noodle => noodle[currentQuestion.key] === options[0]);
+                currentState.step++;
+                startNextStep();
+                return;
+            } 
+            
+            // 5. Задаем вопрос
+            renderQuestionStep(currentQuestion, options);
+        }
+
+        function handleNoodleSelection(noodleId) {
+            const selectedNoodle = noodleDatabase.find(n => n.id === noodleId);
+
+            if (!selectedNoodle) {
+                currentState.step = -2;
+                renderResult();
+                return;
+            }
+            
+            currentState.step = -3; // Финальный шаг
+            renderFinalRecommendation(selectedNoodle);
+        }
+
+        function restart() {
+            // Сбрасываем состояние
+            currentState = {
+                step: 0,
+                filters: {},
+                availableNoodles: []
+            };
+            // Запускаем сначала
+            startGreeting();
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', startGreeting);
 
     </script>
+
 </body>
 </html>
