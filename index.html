@@ -19,6 +19,7 @@
             /* Убеждаемся, что приложение занимает всю доступную высоту (например, в мини-аппе) */
             min-height: 100vh;
             margin: 0; 
+            position: relative; /* Добавлено для корректного позиционирования заставки */
         }
         
         /* --- СТИЛИ ДЛЯ КАРТОЧКИ ПРИЛОЖЕНИЯ --- */
@@ -29,15 +30,19 @@
         }
         /* --- КОНЕЦ СТИЛЕЙ КАРТОЧКИ --- */
         
-        /* Стили для заставки */
+        /* Стили для заставки (Сделано компактнее и центрировано) */
         #splash-screen {
             background-color: #fcf8e3;
-            /* КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Занимает 100% ВЬЮПОРТА */
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            /* НОВОЕ: Компактный размер и центрирование относительно body */
+            position: absolute; 
+            width: 300px;
+            height: 300px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 1.5rem; /* Закругление краев */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); 
+            
             z-index: 50; /* Поверх всего контента */
             display: flex;
             flex-direction: column;
@@ -48,12 +53,10 @@
             overflow: hidden; 
         }
         
-        /* Стиль для полноэкранного изображения в заставке */
+        /* Стиль для изображения в заставке (занимает весь контейнер 300x300) */
         #splash-image {
-            /* Полная ширина и высота контейнера */
             width: 100%;
             height: 100%;
-            /* Обеспечивает полное покрытие контейнера, обрезая лишнее */
             object-fit: cover;
         }
 
@@ -102,10 +105,10 @@
 
     <!-- Заставка запуска приложения (SPLASH SCREEN) -->
     <div id="splash-screen" class="opacity-100">
-        <!-- 🔑 ИСПОЛЬЗУЕМ GIF для ПОЛНОЭКРАННОГО ЗАПУСКА. URL установлен здесь, чтобы избежать отображения заглушки -->
+        <!-- ИСПОЛЬЗУЕМ GIF -->
         <img id="splash-image" 
                src="https://image2url.com/gifs/1764696570536-12f987ea-6660-42ff-af90-59b247680c26.gif" 
-               alt="Полноэкранная анимация маскота Коно"
+               alt="Анимация маскота Коно"
                class="w-full h-full object-cover">
     </div>
     <!-- КОНЕЦ ЗАСТАВКИ -->
@@ -170,7 +173,6 @@
             { id: 'saeu_tangmyeon', name_ru: 'Сэу Танмён (Креветочный)', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка'] },
             { id: 'tushed_chicken', name_ru: 'Тушеная курица', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Курица', toppings_ru: [] },
             { id: 'neoguri', name_ru: 'Неогури', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка'] },
-            // ИСПРАВЛЕНИЕ ОШИБКИ: PLACEHELDER_IMAGE заменено на PLACEHOLDER_IMAGE
             { id: 'pasta_with_garlic', name_ru: 'Паста с чесноком', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Паста', toppings_ru: ['Лук жареный'] },
             { id: 'pasta_with_cheese', name_ru: 'Паста с сыром', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Карбонара', toppings_ru: ['Лук вареный'] },
             { id: 'chan_ramen', name_ru: 'Чан Рамён', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: [] },
@@ -197,6 +199,8 @@
         const konoResultGifUrl = 'https://image2url.com/gifs/1764696953299-dfe22cd0-366c-4b4e-9e36-f35ffd3cdcc1.gif';
         // 🔑 Thinking Process: Новый GIF для промежуточного экрана (пользовательский)
         const konoThinkingProcessGifUrl = 'https://image2url.com/gifs/1764697051373-6b6eb8f1-8dbe-4b79-b965-f4d2bd98a068.gif'; 
+        // 🔑 No Match: Новый GIF для экрана "Ничего не нашлось" (по запросу пользователя)
+        const konoSadGifUrl = 'https://image2url.com/gifs/1764697427429-cfed7fba-1750-4b06-8c30-282e093046d4.gif'; 
         
         // --- STATE AND DOM ELEMENTS ---
         let noodleDatabase = []; 
@@ -316,7 +320,7 @@
         }
         
         /**
-         * Отображает промежуточный результат (список из нескольких вариантов).
+         * Отображает промежуточный результат (список из нескольких вариантов) или ошибку.
          */
         function renderResult() {
             let resultHTML = '';
@@ -365,21 +369,44 @@
 
             } else {
                 // ОШИБКА/НЕТ СОВПАДЕНИЙ ИЛИ ПУСТАЯ БАЗА
-                let errorTitle = "🙁 Упс!";
-                let errorMessage = "К сожалению, по вашим предпочтениям не нашлось подходящей лапши. Попробуйте изменить один из критериев, или начните сначала!";
-                
                 if (noodleDatabase.length === 0) {
-                    errorTitle = "⚠️ Ошибка Базы Данных!";
-                    errorMessage = "Не удалось загрузить или обработать данные меню.";
-                }
+                    // Ошибка загрузки базы данных (критическая)
+                    let errorTitle = "⚠️ Ошибка Базы Данных!";
+                    let errorMessage = "Не удалось загрузить или обработать данные меню.";
+                    let errorHTML = `
+                        <div class="p-6 bg-red-100 border border-red-300 rounded-xl shadow-lg text-center">
+                            <h2 class="text-2xl font-bold text-red-800 mb-3">${errorTitle}</h2>
+                            <p class="text-gray-700">${errorMessage}</p>
+                        </div>
+                    `;
+                    setMainContent(errorHTML);
+                } else if (currentState.step === -2) {
+                    // 🔑 НЕТ СОВПАДЕНИЙ (Отображаем GIF по запросу пользователя)
+                    const gifUrl = konoSadGifUrl;
+                    
+                    let errorHTML = `
+                        <div class="text-center p-8 flex flex-col items-center justify-center min-h-[300px] fade-in">
+                            <!-- Mascot Sad GIF -->
+                            <div class="flex justify-center mb-6">
+                                <img src="${gifUrl}" alt="Маскот Коно расстроен" 
+                                    onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" 
+                                    class="w-48 h-48 rounded-full object-cover border-4 border-red-400 p-0.5 shadow-xl">
+                            </div>
 
-                let errorHTML = `
-                    <div class="p-6 bg-red-100 border border-red-300 rounded-xl shadow-lg text-center">
-                        <h2 class="text-2xl font-bold text-red-800 mb-3">${errorTitle}</h2>
-                        <p class="text-gray-700">${errorMessage}</p>
-                    </div>
-                `;
-                setMainContent(errorHTML);
+                            <!-- Sad Message -->
+                            <div class="bg-red-100 p-4 rounded-xl shadow-lg border-2 border-red-300">
+                                <h2 class="text-2xl font-bold text-red-800 mb-2">😭 О нет!</h2>
+                                <p class="text-xl text-gray-700 font-semibold">По вашим критериям ничего не нашлось.</p>
+                                <p class="text-base text-gray-500 mt-2">Попробуйте начать заново, выбрав другие предпочтения!</p>
+                            </div>
+                        </div>
+                    `;
+                    setMainContent(errorHTML);
+                } else {
+                    // Общий запасной вариант ошибки
+                    let errorHTML = `<div class="p-6 bg-red-100 border border-red-300 rounded-xl shadow-lg text-center"><h2 class="text-2xl font-bold text-red-800 mb-3">🙁 Упс!</h2><p class="text-gray-700">Произошла неизвестная ошибка.</p></div>`;
+                     setMainContent(errorHTML);
+                }
             }
             renderControls();
         }
