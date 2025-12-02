@@ -11,22 +11,22 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            /* ВОЗВРАТ: Установлен мягкий бежевый фон для body */
+            /* Установлен мягкий бежевый фон для body */
             background-color: #eae7d8; 
             display: flex;
             justify-content: center;
             align-items: center;
+            /* Убеждаемся, что приложение занимает всю доступную высоту (например, в мини-аппе) */
             min-height: 100vh;
+            /* Добавлено: Убираем излишние отступы, которые могут быть на мобильных */
+            margin: 0; 
         }
         
         /* --- СТИЛИ ДЛЯ КАРТОЧКИ ПРИЛОЖЕНИЯ --- */
         .glass-card {
-            /* Установлен ТОЧНЫЙ цвет фона #fcf8e3 (без прозрачности), 
-               чтобы идеально сливаться с GIF и отличаться от фона body. */
+            /* Установлен ТОЧНЫЙ цвет фона #fcf8e3 (без прозрачности) */
             background-color: #fcf8e3; 
-            /* Тонкая белая рамка, чтобы придать форму */
             border: 1px solid rgba(0, 0, 0, 0.05); 
-            /* Элегантная тень */
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); 
         }
         /* --- КОНЕЦ СТИЛЕЙ КАРТОЧКИ --- */
@@ -35,6 +35,7 @@
         #splash-screen {
             /* Сохранен цвет #fcf8e3 для идеального совпадения с GIF */
             background-color: #fcf8e3;
+            /* 🔑 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Занимает 100% ВЬЮПОРТА */
             position: fixed;
             top: 0;
             left: 0;
@@ -47,6 +48,22 @@
             justify-content: center;
             /* Плавный переход для скрытия */
             transition: opacity 0.7s ease-out; 
+            overflow: hidden; 
+        }
+        
+        /* Стиль для полноэкранного изображения в заставке */
+        #splash-image {
+            /* Полная ширина и высота контейнера */
+            width: 100%;
+            height: 100%;
+            /* Обеспечивает полное покрытие контейнера, обрезая лишнее */
+            object-fit: cover;
+        }
+
+        /* Убедимся, что основной контент не имеет лишних отступов на мобильных */
+        #main-app-content {
+            margin: 0 !important;
+            max-width: 100% !important;
         }
 
         /* Custom scrollbar for main content area (if needed) */
@@ -87,23 +104,18 @@
 <body>
 
     <!-- Заставка запуска приложения (SPLASH SCREEN) -->
+    <!-- 🔑 КОНФИГУРАЦИЯ ДЛЯ ПОЛНОЭКРАННОСТИ -->
     <div id="splash-screen" class="opacity-100">
-        <!-- Уменьшены размеры контейнера видео: max-w-48 на мобильных, md:max-w-64 на десктопе -->
-        <div class="w-full max-w-48 md:max-w-64 p-4">
-            <!-- Удалена синяя рамка (border-4 border-indigo-500) для слияния с фоном -->
-            <video id="splash-video" 
-                   src="https://tryitimagee.s3.eu-central-1.amazonaws.com/kling/3816742_1764687304073492900.mp4" 
-                   loop muted autoplay playsinline
-                   class="w-full h-auto rounded-2xl shadow-2xl object-cover">
-                Ваш браузер не поддерживает видео.
-            </video>
-        </div>
-        <!-- Удален блок с текстом загрузки, чтобы он не отвлекал -->
+        <img id="splash-image" 
+               src="https://image2url.com/gifs/1764689574733-bed67147-df97-48ca-a70f-f2651896a28a.gif" 
+               onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=Фото+Нет';"
+               alt="Полноэкранная анимация маскота Коно"
+               class="w-full h-full object-cover">
     </div>
     <!-- КОНЕЦ ЗАСТАВКИ -->
 
     <!-- Основной контент приложения (скрыт по умолчанию) -->
-    <div id="main-app-content" class="w-full max-w-lg mx-4 p-6 md:p-8 rounded-2xl glass-card hidden">
+    <div id="main-app-content" class="w-full max-w-lg mx-auto p-6 md:p-8 rounded-2xl glass-card hidden">
         <!-- Header -->
         <header class="mb-6 border-b pb-4">
             <h1 class="text-3xl font-extrabold text-gray-800">🍜 Рамён-Помощник</h1>
@@ -182,7 +194,7 @@
         const videoUrls = {
             // Оригинальная GIF-ссылка для стартового экрана и приветствия (Шаг 0)
             'greeting': 'https://image2url.com/gifs/1764683955171-0477faf0-168c-4bc0-9783-131ea540089f.gif', 
-            // НОВАЯ GIF-ссылка для шагов с вопросами (Шаг 1 и далее)
+            // GIF-ссылка для вопросов и заставки
             'questionGif': 'https://image2url.com/gifs/1764689574733-bed67147-df97-48ca-a70f-f2651896a28a.gif',
             'placeholder': 'https://placehold.co/16x9/0d1117/ffffff?text=ТЕКСТ' // Заглушка
         };
@@ -197,8 +209,6 @@
 
         const mainArea = document.getElementById('main-interaction-area');
         const controlArea = document.getElementById('control-area');
-        // loadingIndicator больше не нужен, так как его заменяет заставка
-        // const loadingIndicator = document.getElementById('loading-indicator'); 
         
         let gifTimeoutId = null; 
 
@@ -468,7 +478,7 @@
 
             // 2. Асинхронная загрузка данных (с минимальной задержкой)
             const dataLoadPromise = loadNoodleDatabase();
-            // Минимальное время отображения заставки (УВЕЛИЧЕНО до 5000 мс)
+            // Минимальное время отображения заставки (5000 мс)
             const minTimePromise = new Promise(resolve => setTimeout(resolve, 5000));
 
             // Ждем завершения обоих: загрузки данных И минимального времени
@@ -479,7 +489,7 @@
             // Определяем продолжительность перехода (из CSS: 0.7s)
             const transitionDuration = 700; 
 
-            // 🔑 ИСПРАВЛЕНИЕ: Инициализируем доступные варианты всей базой данных
+            // Инициализируем доступные варианты всей базой данных
             currentState.availableNoodles = [...noodleDatabase];
 
             // 3. Плавное скрытие заставки
