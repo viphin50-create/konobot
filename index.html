@@ -11,28 +11,44 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            /* Изменен основной цвет фона на мягкий желтый */
-            background-color: #fff8e1; 
+            /* ВОЗВРАТ: Установлен мягкий бежевый фон для body */
+            background-color: #eae7d8; 
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
         }
         
-        /* --- СТИЛИ ДЛЯ ЭФФЕКТА СТЕКЛА (GLASSMORPHISM) --- */
+        /* --- СТИЛИ ДЛЯ КАРТОЧКИ ПРИЛОЖЕНИЯ --- */
         .glass-card {
-            /* Полупрозрачный белый фон */
-            background-color: rgba(255, 255, 255, 0.4); 
-            /* Основной эффект размытия фона */
-            backdrop-filter: blur(10px); 
-            -webkit-backdrop-filter: blur(10px); /* Для поддержки Safari */
+            /* Установлен ТОЧНЫЙ цвет фона #fcf8e3 (без прозрачности), 
+               чтобы идеально сливаться с GIF и отличаться от фона body. */
+            background-color: #fcf8e3; 
             /* Тонкая белая рамка, чтобы придать форму */
-            border: 1px solid rgba(255, 255, 255, 0.2); 
+            border: 1px solid rgba(0, 0, 0, 0.05); 
             /* Элегантная тень */
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); 
         }
-        /* --- КОНЕЦ СТИЛЕЙ СТЕКЛА --- */
+        /* --- КОНЕЦ СТИЛЕЙ КАРТОЧКИ --- */
         
+        /* Стили для заставки */
+        #splash-screen {
+            /* Сохранен цвет #fcf8e3 для идеального совпадения с GIF */
+            background-color: #fcf8e3;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 50; /* Поверх всего контента */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* Плавный переход для скрытия */
+            transition: opacity 0.7s ease-out; 
+        }
+
         /* Custom scrollbar for main content area (if needed) */
         #main-interaction-area {
             min-height: 250px; /* Минимальная высота, чтобы не "прыгало" */
@@ -62,12 +78,32 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        /* Утилита для скрытия элемента, используем !important для переопределения flex */
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Применяем класс glass-card к основному контейнеру -->
-    <div class="w-full max-w-lg mx-4 p-6 md:p-8 rounded-2xl glass-card">
+    <!-- Заставка запуска приложения (SPLASH SCREEN) -->
+    <div id="splash-screen" class="opacity-100">
+        <!-- Уменьшены размеры контейнера видео: max-w-48 на мобильных, md:max-w-64 на десктопе -->
+        <div class="w-full max-w-48 md:max-w-64 p-4">
+            <!-- Удалена синяя рамка (border-4 border-indigo-500) для слияния с фоном -->
+            <video id="splash-video" 
+                   src="https://tryitimagee.s3.eu-central-1.amazonaws.com/kling/3816742_1764687304073492900.mp4" 
+                   loop muted autoplay playsinline
+                   class="w-full h-auto rounded-2xl shadow-2xl object-cover">
+                Ваш браузер не поддерживает видео.
+            </video>
+        </div>
+        <!-- Удален блок с текстом загрузки, чтобы он не отвлекал -->
+    </div>
+    <!-- КОНЕЦ ЗАСТАВКИ -->
+
+    <!-- Основной контент приложения (скрыт по умолчанию) -->
+    <div id="main-app-content" class="w-full max-w-lg mx-4 p-6 md:p-8 rounded-2xl glass-card hidden">
         <!-- Header -->
         <header class="mb-6 border-b pb-4">
             <h1 class="text-3xl font-extrabold text-gray-800">🍜 Рамён-Помощник</h1>
@@ -129,6 +165,7 @@
             { id: 'pasta_with_garlic', name_ru: 'Паста с чесноком', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Паста', toppings_ru: ['Лук жареный'] },
             { id: 'pasta_with_cheese', name_ru: 'Паста с сыром', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Карбонара', toppings_ru: ['Лук вареный'] },
             { id: 'chan_ramen', name_ru: 'Чан Рамён', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: [] },
+            /* Опечатка исправлена: "PLACEER_IMAGE" на "PLACEHOLDER_IMAGE" */
             { id: 'ship_ramen_spicy', name_ru: 'Шип Рамён острый', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Средняя', baseFlavor_ru: 'Говядина', toppings_ru: ['Черные грибы', 'Лук жареный'] }, 
             { id: 'carbonara', name_ru: 'Карбонара', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Карбонара', toppings_ru: [] },
         ];
@@ -143,7 +180,10 @@
 
         // --- КОНФИГУРАЦИЯ GIF МАСКОТА ---
         const videoUrls = {
+            // Оригинальная GIF-ссылка для стартового экрана и приветствия (Шаг 0)
             'greeting': 'https://image2url.com/gifs/1764683955171-0477faf0-168c-4bc0-9783-131ea540089f.gif', 
+            // НОВАЯ GIF-ссылка для шагов с вопросами (Шаг 1 и далее)
+            'questionGif': 'https://image2url.com/gifs/1764689574733-bed67147-df97-48ca-a70f-f2651896a28a.gif',
             'placeholder': 'https://placehold.co/16x9/0d1117/ffffff?text=ТЕКСТ' // Заглушка
         };
 
@@ -157,7 +197,8 @@
 
         const mainArea = document.getElementById('main-interaction-area');
         const controlArea = document.getElementById('control-area');
-        const loadingIndicator = document.getElementById('loading-indicator');
+        // loadingIndicator больше не нужен, так как его заменяет заставка
+        // const loadingIndicator = document.getElementById('loading-indicator'); 
         
         let gifTimeoutId = null; 
 
@@ -205,7 +246,7 @@
          * Отображает начальный экран или GIF-приветствие.
          */
         function renderStartScreen() {
-            // HTML для приветствия
+            // Используем 'greeting' GIF для стартового экрана (Шаг 0)
             const gifUrl = videoUrls['greeting'];
             
             // Новый HTML для стартового экрана с маскотом-аватаром
@@ -232,17 +273,19 @@
          * Рендерит текущий вопрос и кнопки выбора. (Обновлено для диалогового стиля)
          */
         function renderQuestionStep(question, options) {
-            const gifUrl = videoUrls['greeting']; 
+            // Используем 'questionGif' для шагов с вопросами (Шаг 1 и далее)
+            const gifUrl = videoUrls['questionGif']; 
             
             // HTML для отображения вопроса в формате диалога
             let questionHTML = `
                 <!-- DIALOGUE CONTAINER -->
-                <div class="flex items-start mb-6 space-x-3 fade-in">
-                    <!-- Mascot Avatar (Konu) - увеличен до w-20 h-20 -->
-                    <div class="flex-shrink-0 w-20 h-20">
+                <div class="flex items-start mb-6 space-x-4 fade-in">
+                    
+                    <!-- Mascot Character Container (Konu) - УВЕЛИЧЕННЫЕ РАЗМЕРЫ w-36 h-40, БЕЗ РАМКИ -->
+                    <div class="flex-shrink-0 w-36 h-40 overflow-hidden rounded-xl shadow-lg bg-white">
                         <img src="${gifUrl}" alt="Маскот Коно" 
                              onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" 
-                             class="w-full h-full rounded-full object-cover border-4 border-indigo-400 p-0.5 shadow-md">
+                             class="w-full h-full object-cover">
                     </div>
                     
                     <!-- Speech Bubble (Question) -->
@@ -411,20 +454,53 @@
 
         // --- LOGIC FUNCTIONS ---
 
+        /**
+         * Основная функция инициализации и управления заставкой.
+         */
         async function startGreeting() {
-            setMainContent('<div id="loading-indicator" class="flex justify-center p-4"><div class="spinner"></div><span class="ml-3 text-gray-500">Загрузка меню...</span></div>');
+            const splashScreen = document.getElementById('splash-screen');
+            const mainContent = document.getElementById('main-app-content');
             
-            noodleDatabase = await loadNoodleDatabase();
+            // 1. Убеждаемся, что основной контент скрыт и показываем заставку
+            mainContent.classList.add('hidden');
+            splashScreen.classList.remove('hidden');
+            splashScreen.style.opacity = '1';
+
+            // 2. Асинхронная загрузка данных (с минимальной задержкой)
+            const dataLoadPromise = loadNoodleDatabase();
+            // Минимальное время отображения заставки (УВЕЛИЧЕНО до 5000 мс)
+            const minTimePromise = new Promise(resolve => setTimeout(resolve, 5000));
+
+            // Ждем завершения обоих: загрузки данных И минимального времени
+            await Promise.all([dataLoadPromise, minTimePromise]);
+
+            noodleDatabase = await dataLoadPromise; // Получаем результат загрузки
+            
+            // Определяем продолжительность перехода (из CSS: 0.7s)
+            const transitionDuration = 700; 
+
+            // 🔑 ИСПРАВЛЕНИЕ: Инициализируем доступные варианты всей базой данных
             currentState.availableNoodles = [...noodleDatabase];
+
+            // 3. Плавное скрытие заставки
+            splashScreen.style.opacity = '0';
             
+            // 4. Запуск приложения или показ ошибки, если база пуста
             if (noodleDatabase.length === 0) {
                 currentState.step = -2;
-                renderResult(); 
-                return;
+                mainContent.classList.remove('hidden');
+                renderResult(); // Отображаем ошибку
+            } else {
+                currentState.step = 0;
+                // Делаем основной контент видимым
+                mainContent.classList.remove('hidden'); 
+                renderStartScreen(); // Отображаем начальный экран (контент внутри будет анимирован через fade-in)
             }
-
-            currentState.step = 0;
-            renderStartScreen();
+            
+            // 5. Полностью скрываем элемент заставки после завершения fade-out
+            setTimeout(() => {
+                splashScreen.classList.add('hidden'); 
+            }, transitionDuration); 
         }
 
         function handleAnswer(key, value) {
@@ -502,8 +578,9 @@
                 filters: {},
                 availableNoodles: []
             };
-            // Запускаем сначала
-            startGreeting();
+            // Инициализируем доступные варианты для нового старта
+            currentState.availableNoodles = [...noodleDatabase];
+            renderStartScreen();
         }
 
         // --- INITIALIZATION ---
