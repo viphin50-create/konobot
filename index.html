@@ -26,7 +26,6 @@
         .glass-card {
             background-color: #fcf8e3; 
             border: 1px solid rgba(0, 0, 0, 0.05); 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); 
         }
         /* --- КОНЕЦ СТИЛЕЙ КАРТОЧКИ --- */
 
@@ -58,15 +57,37 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Стили для карточки блюда (миниатюра) */
+        /* Стили для карточки блюда (миниатюра) - теперь управляются JS */
         .noodle-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            /* Добавляем плавность для динамических изменений scale и opacity */
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease, opacity 0.3s ease; 
             cursor: pointer;
+            transform-origin: center center; /* Масштабирование должно происходить от центра */
+            /* Начальное состояние, чтобы избежать пустого места */
+            transform: scale(0.9); 
+            box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
         }
         .noodle-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            /* Убираем hover эффект сдвига, так как трансформация управляется JS */
+            /* transform: translateY(-2px); */ 
         }
+        
+        /* Стили для карусели результатов */
+        #results-carousel {
+            /* Скрытие стандартного скроллбара, но сохранение скроллинга */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+            /* Добавляем центрирование элементов при скролле */
+            scroll-snap-type: x mandatory; 
+        }
+        #results-carousel::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        /* Обязательный класс для прилипания элементов к центру */
+        .snap-center {
+            scroll-snap-align: center;
+        }
+
 
         /* Стили для модального окна */
         #modal-overlay {
@@ -81,12 +102,37 @@
         .hidden {
             display: none !important;
         }
+        
+        /* CSS Spinner для загрузки */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #4f46e5; /* indigo-600 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Стиль для резервного маскота (если GIF не загрузился) */
+        .fallback-mascot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem; /* Для эмодзи */
+            background-color: #eef2ff; /* Светло-голубой фон */
+            color: #4f46e5; /* Индиго текст */
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
     <!-- Основной контент приложения -->
-    <!-- Класс 'hidden' остается, чтобы избежать мерцания до загрузки данных -->
     <div id="main-app-content" class="w-full max-w-lg mx-auto p-6 md:p-8 rounded-2xl glass-card hidden">
         <!-- Header -->
         <header class="mb-6 border-b pb-4">
@@ -96,7 +142,7 @@
 
         <!-- Main Dynamic Interaction Area -->
         <div id="main-interaction-area" class="space-y-6 pb-4 fade-in">
-            <div id="loading-indicator" class="flex justify-center p-4 hidden">
+            <div id="loading-indicator" class="flex justify-center p-4">
                 <div class="spinner"></div>
                 <span class="ml-3 text-gray-500">Загрузка меню...</span>
             </div>
@@ -120,9 +166,72 @@
     </div>
 
     <script>
-        // --- DATA AND CONFIGURATION ---
+        // --- КОНФИГУРАЦИЯ ДАННЫХ И ИСТОЧНИК (GOOGLE SHEETS) ---
+        // Ссылка обновлена на предоставленную пользователем
+        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRzcJMQjrWXO96NnjwHMwpj_m-vYy_KkPAzVJcjeUc89QCrnE6EY_cm3VYwVxD7_i_x-IYk0g1_llqB4/pub?gid=1604915448&single=true&output=csv';
         const PLACEHOLDER_IMAGE = "https://placehold.co/100x100/1e293b/ffffff?text=Фото+Нет";
         
+        // --- Fallback Data for when the Google Sheets link fails (e.g., 404) ---
+        const FALLBACK_DATA = [
+            {
+                id: 'shin_ramyun_fallback',
+                name_ru: 'Shin Ramyun (Классический)',
+                image: 'https://placehold.co/100x100/EF4444/FFFFFF?text=Shin',
+                preparation_ru: 'С бульоном', 
+                spiceLevel_ru: 'Средняя',
+                baseFlavor_ru: 'Говядина',
+                cookingTime_ru: '5', 
+                toppings_ru: ['Яйцо', 'Кимчи', 'Зеленый лук']
+            },
+            {
+                id: 'buldak_2x_fallback',
+                name_ru: 'Buldak (2x Острый)',
+                image: 'https://placehold.co/100x100/F97316/FFFFFF?text=Buldak',
+                preparation_ru: 'Без бульона', 
+                spiceLevel_ru: 'Острая',
+                baseFlavor_ru: 'Курица',
+                cookingTime_ru: '15', 
+                toppings_ru: ['Сыр', 'Кунжут', 'Нори']
+            },
+            {
+                id: 'jjapagetti_fallback',
+                name_ru: 'Jjapagetti',
+                image: 'https://placehold.co/100x100/4B5563/FFFFFF?text=Jjap',
+                preparation_ru: 'Без бульона', 
+                spiceLevel_ru: 'Не острая',
+                baseFlavor_ru: 'Черные бобы',
+                cookingTime_ru: '7', 
+                toppings_ru: ['Огурцы', 'Масло']
+            }
+        ];
+
+        // --- ФУНКЦИЯ ПАРСИНГА CSV ---
+        function csvToJSON(csv) {
+            const lines = csv.split('\n');
+            // Заголовки - первая строка
+            const headers = lines[0].split(',').map(header => header.trim());
+            const result = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === '') continue;
+
+                // Для корректного парсинга полей, содержащих запятые,
+                // необходимо использовать более сложный парсер или убедиться,
+                // что CSV-данные не содержат незаэкранированных запятых внутри полей.
+                // Для простоты оставим split(','), но это может быть источником ошибок.
+                const currentline = line.split(',');
+
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j]] = currentline[j] ? currentline[j].trim() : '';
+                }
+                result.push(obj);
+            }
+            return result;
+        }
+
+        // Словарь для отображения иконок в кнопках
         const optionIcons = {
             "С бульоном": "🍲", "Без бульона": "🍜",
             "Не острая": "🟢", "Средняя": "🌶️🌶️", "Острая": "🌶️🌶️🌶️",
@@ -130,38 +239,31 @@
             "default": "✨"
         };
 
-        const STATIC_RAMEN_DB = [
-            { id: 'chapagetti', name_ru: 'Чапагетти', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Черные бобы', toppings_ru: ['Нарутомаки', 'Сасими', 'Морепродукты'] },
-            { id: 'anson_tongmyeon', name_ru: 'Ансон Тонмён', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка', 'Лук жареный'] },
-            { id: 'kimchi_ramen', name_ru: 'Кимчи Рамен', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Кимчи', toppings_ru: ['Креветка', 'Нарутомаки'] },
-            { id: 'puldak_ramen', name_ru: 'Пулдак Рамён', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Курица', toppings_ru: ['Лук жареный'] },
-            { id: 'saeu_tangmyeon', name_ru: 'Сэу Танмён (Креветочный)', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка'] },
-            { id: 'tushed_chicken', name_ru: 'Тушеная курица', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Курица', toppings_ru: [] },
-            { id: 'neoguri', name_ru: 'Неогури', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: ['Креветка'] },
-            { id: 'pasta_with_garlic', name_ru: 'Паста с чесноком', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Паста', toppings_ru: ['Лук жареный'] },
-            { id: 'pasta_with_cheese', name_ru: 'Паста с сыром', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Карбонара', toppings_ru: ['Лук вареный'] },
-            { id: 'chan_ramen', name_ru: 'Чан Рамён', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Не острая', baseFlavor_ru: 'Морепродукты', toppings_ru: [] },
-            { id: 'ship_ramen_spicy', name_ru: 'Шип Рамён острый', image: PLACEHOLDER_IMAGE, preparation_ru: 'С бульоном', spiceLevel_ru: 'Средняя', baseFlavor_ru: 'Говядина', toppings_ru: ['Черные грибы', 'Лук жареный'] }, 
-            { id: 'carbonara', name_ru: 'Карбонара', image: PLACEHOLDER_IMAGE, preparation_ru: 'Без бульона', spiceLevel_ru: 'Острая', baseFlavor_ru: 'Карбонара', toppings_ru: [] },
-        ];
-
+        // Поток вопросов для выбора
         const questionFlow = [
             { key: 'preparation_ru', prompt_ru: "С чего начнем? Вы любите рамён <b>с бульоном</b> или предпочитаете <b>без бульона</b>?", options_ru: ["С бульоном", "Без бульона"] },
             { key: 'spiceLevel_ru', prompt_ru: "Как насчет остроты? Выберите свой уровень:", options_ru: ["Не острая", "Средняя", "Острая"] },
             { key: 'baseFlavor_ru', prompt_ru: "Отлично. А какой вкус вы ищете сегодня?", options_source: "dynamic_from_filter" }
         ];
 
-        // --- GIF CONFIG ---
+        // --- GIF CONFIG (URLs для разных состояний маскота) ---
         const videoUrls = {
             'greeting': 'https://image2url.com/gifs/1764696020110-4cd7d218-14c8-4f51-8233-14208e95f64e.gif', 
             'questionGif': 'https://image2url.com/gifs/1764696307418-26635021-448f-4588-b4d1-acb956135531.gif',
-            'thinking': 'https://image2url.com/gifs/1764697051373-6b6eb8f1-8dbe-4b79-b965-f4d2bd98a068.gif',
-            'sad': 'https://image2url.com/gifs/1764697427429-cfed7fba-1750-4b06-8c30-282e093046d4.gif'
+            'thinking': 'https://image2url.com/gifs/1764697051373-6b6eb9f1-8bde-4b79-b965-f4d1bd98a068.gif',
+            'sad': 'https://image2url.com/gifs/1764697427429-cfed7fba-170-4b06-8c30-282e093046d4.gif',
+            // Статичный плейсхолдер на случай ошибки загрузки GIF
+            'fallback': 'https://placehold.co/192x192/4f46e5/ffffff?text=Коно' 
         };
 
-        // --- STATE ---
-        let noodleDatabase = []; 
-        let currentState = { step: 0, filters: {}, availableNoodles: [] };
+        // --- STATE (Состояние приложения) ---
+        let noodleDatabase = []; // Полная база данных
+        let isFallbackData = false; // Флаг, указывающий, используются ли резервные данные
+        let currentState = { 
+            step: 0, 
+            filters: {}, 
+            availableNoodles: [] // Блюда, которые соответствуют текущим фильтрам
+        };
         
         // --- DOM ELEMENTS ---
         const mainArea = document.getElementById('main-interaction-area');
@@ -169,14 +271,61 @@
         const modalOverlay = document.getElementById('modal-overlay');
         const modalContent = document.getElementById('modal-content');
         const modalBody = document.getElementById('modal-body');
+        const loadingIndicator = document.getElementById('loading-indicator');
 
-        // --- UTILITY ---
+
+        // --- ФУНКЦИЯ ЗАГРУЗКИ ДАННЫХ ИЗ GOOGLE SHEETS ---
         async function loadNoodleDatabase() {
-            // Имитация загрузки данных
-            return new Promise(resolve => setTimeout(() => resolve(STATIC_RAMEN_DB), 100));
+            console.log("Fetching data from Google Sheets...");
+            loadingIndicator.classList.remove('hidden');
+            let fallbackUsed = false;
+
+            try {
+                const response = await fetch(GOOGLE_SHEET_CSV_URL);
+                if (!response.ok) {
+                    // Если статус не 200 (например, 404), выбрасываем ошибку для перехода в catch
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const csvText = await response.text();
+                const rawData = csvToJSON(csvText);
+
+                // Преобразование и маппинг колонок
+                const mappedData = rawData.map(item => {
+                    const toppingsString = item.Toppings || '';
+                    
+                    return {
+                        id: item.Name.toLowerCase().replace(/[^a-zа-я0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 5),
+                        name_ru: item.Name || 'Неизвестное блюдо',
+                        image: item.Photo || PLACEHOLDER_IMAGE,
+                        preparation_ru: item.Method || 'С бульоном', // Используем этот ключ для фильтрации и модального окна
+                        spiceLevel_ru: item.Spiciness || 'Не острая',
+                        baseFlavor_ru: item.Flavor || 'Базовый вкус',
+                        cookingTime_ru: item.CookingTime || '0', // Теперь это просто код/число
+                        toppings_ru: toppingsString.split(',').map(t => t.trim()).filter(t => t.length > 0)
+                    };
+                }).filter(item => item.name_ru !== 'Неизвестное блюдо'); // Фильтруем пустые строки
+                
+                if (mappedData.length === 0) {
+                     console.warn("Mapped data is empty. Using fallback data.");
+                     fallbackUsed = true;
+                     return { data: FALLBACK_DATA, isFallback: fallbackUsed };
+                }
+
+                console.log("Data loaded and mapped successfully.", mappedData);
+                return { data: mappedData, isFallback: fallbackUsed };
+
+            } catch (error) {
+                console.error("Failed to load data from Google Sheets. Using fallback data.", error);
+                fallbackUsed = true;
+                return { data: FALLBACK_DATA, isFallback: fallbackUsed }; // ВОЗВРАЩАЕМ РЕЗЕРВНЫЕ ДАННЫЕ В СЛУЧАЕ ЛЮБОЙ ОШИБКИ
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
         }
+        
         function setMainContent(html) { mainArea.innerHTML = html; }
 
+        // Создание интерактивной кнопки
         function createButton(text, onClick, classes = 'bg-white text-gray-800 border-2 border-indigo-200 hover:bg-indigo-100 font-medium py-3 px-6 rounded-xl user-button flex-grow text-center flex items-center justify-center') {
             const btn = document.createElement('button');
             const icon = optionIcons[text] || optionIcons['default'];
@@ -186,13 +335,31 @@
             return btn;
         }
 
-        // --- UI RENDERING ---
+        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавлен onerror для GIF ---
         function renderStartScreen() {
             const gifUrl = videoUrls['greeting'];
+            const fallbackUrl = videoUrls['fallback'];
+            let warningMessage = '';
+
+            // Если были использованы резервные данные, показываем предупреждение
+            if (isFallbackData) { 
+                warningMessage = `
+                    <div class="p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-xl mb-4 text-left fade-in">
+                        <p class="font-bold">⚠️ ВНИМАНИЕ: Ошибка загрузки данных</p>
+                        <p class="text-sm">Не удалось загрузить меню по внешней ссылке Google Sheets. Отображаются старые резервные данные. Пожалуйста, убедитесь, что ссылка на таблицу корректна и опубликована в формате CSV (переменная <code>GOOGLE_SHEET_CSV_URL</code>).</p>
+                    </div>
+                `;
+            }
+
             let contentHTML = `
+                ${warningMessage} 
                 <div class="text-center p-4">
                     <div class="flex justify-center mb-6">
-                        <img src="${gifUrl}" alt="Маскот Коно" class="w-36 h-36 rounded-full object-cover border-4 border-indigo-300 p-0.5 shadow-lg">
+                        <img 
+                            src="${gifUrl}" 
+                            onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
+                            alt="Маскот Коно" 
+                            class="w-36 h-36 rounded-full object-cover border-4 border-indigo-300 p-0.5 shadow-lg">
                     </div>
                     <h2 class="text-2xl font-extrabold text-indigo-700 mb-2">👋 Привет! Я Коно, твой Рамён-Помощник.</h2>
                     <p class="text-gray-500 mb-6">Нажми "Начать выбор", чтобы найти идеальное блюдо для тебя.</p>
@@ -202,12 +369,18 @@
             renderControls();
         }
 
+        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавлен onerror для GIF ---
         function renderQuestionStep(question, options) {
             const gifUrl = videoUrls['questionGif']; 
+            const fallbackUrl = videoUrls['fallback'];
             let questionHTML = `
                 <div class="flex items-start mb-6 space-x-4 fade-in">
                     <div class="flex-shrink-0 w-36 h-40 overflow-hidden rounded-xl shadow-lg bg-white">
-                        <img src="${gifUrl}" alt="Маскот Коно" class="w-full h-full object-cover">
+                        <img 
+                            src="${gifUrl}" 
+                            onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot', 'h-full', 'w-full'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
+                            alt="Маскот Коно" 
+                            class="w-full h-full object-cover">
                     </div>
                     <div class="flex-grow bg-indigo-50 p-4 rounded-xl rounded-tl-none shadow-lg border-2 border-indigo-200">
                         <p class="text-sm font-bold text-indigo-700 mb-1">КОНО (Шаг ${currentState.step}/${questionFlow.length})</p>
@@ -227,39 +400,88 @@
             });
         }
 
-        // --- MODAL LOGIC ---
+        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ МОДАЛЬНОГО ОКНА ---
         function openModal(noodleId) {
             const noodle = noodleDatabase.find(n => n.id === noodleId);
             if (!noodle) return;
 
+            // 1. Формируем список топпингов
             const toppingsList = noodle.toppings_ru.length > 0 
                 ? noodle.toppings_ru.map(t => `<li class="flex items-start"><span class="mr-2 text-green-500">✓</span>${t}</li>`).join('')
                 : '<li class="text-gray-500">Любой топпинг по вашему вкусу!</li>';
+            
+            // 2. Условный блок "Обозначение"
+            let designationBlock = '';
+            
+            if (noodle.preparation_ru === 'С бульоном') {
+                 designationBlock = `
+                    <!-- БЛОК: Обозначение "С бульоном" -->
+                    <div class="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm">
+                        <p class="font-bold text-indigo-800 mb-1 text-sm uppercase tracking-wide flex items-center">
+                            <span class="text-xl mr-2">ℹ️</span> Обозначение "С бульоном"
+                        </p>
+                        <p class="text-sm text-gray-700">
+                            Это значит, что после варки лапши 
+                            <b>вода полностью не сливается</b>, и рамён подается в горячем, ароматном бульоне. 
+                            Идеально для классического или острого супового рамёна.
+                        </p>
+                    </div>
+                 `;
+            } else if (noodle.preparation_ru === 'Без бульона') {
+                 designationBlock = `
+                    <!-- БЛОК: Обозначение "Без бульона" -->
+                    <div class="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm">
+                        <p class="font-bold text-indigo-800 mb-1 text-sm uppercase tracking-wide flex items-center">
+                            <span class="text-xl mr-2">ℹ️</span> Обозначение "Без бульона"
+                        </p>
+                        <p class="text-sm text-gray-700">
+                            Без бульона - вода сливается после варки, специи добавляются после.
+                        </p>
+                    </div>
+                 `;
+            }
+
 
             const html = `
                 <div class="relative">
-                    <div class="h-56 w-full bg-gray-200 overflow-hidden">
-                         <img src="${noodle.image}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" class="w-full h-full object-cover">
+                    <!-- Заголовок и Фотография -->
+                    <div class="relative w-full aspect-square bg-gray-200 overflow-hidden">
+                         <img src="${noodle.image}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" class="absolute inset-0 w-full h-full object-cover">
                     </div>
-                    <div class="p-6">
+                    
+                    <div class="p-4">
                         <h3 class="text-2xl font-extrabold text-gray-800 mb-1">${noodle.name_ru}</h3>
                         <div class="flex flex-wrap gap-2 mb-4">
                             <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-md font-medium">${noodle.preparation_ru}</span>
                             <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-md font-medium">${noodle.spiceLevel_ru}</span>
                             <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium">${noodle.baseFlavor_ru}</span>
                         </div>
+                        
+                        ${designationBlock} <!-- УСЛОВНО ОТОБРАЖАЕМ БЛОК -->
+
+                        <!-- БЛОК: Режим Варки (Код) - Убран циферблат -->
+                        <div class="mt-4 bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm text-center">
+                            <p class="font-bold text-yellow-800 mb-2 text-sm uppercase tracking-wide">Режим Варки</p>
+                            <p class="text-5xl font-extrabold text-gray-900">${noodle.cookingTime_ru}</p>
+                            <p class="text-xs text-gray-500 mt-1">Это код для рамёноварки КОНО.</p>
+                        </div>
+
+                        <!-- Блок Топпингов -->
                         <div class="mt-4 bg-green-50 p-4 rounded-xl border border-green-100">
                             <p class="font-bold text-green-800 mb-2 text-sm uppercase tracking-wide">Рекомендую попробовать с нашими топпингами:</p>
                             <ul class="space-y-1 text-sm text-gray-700">${toppingsList}</ul>
                         </div>
                     </div>
+                    
+                    <!-- Кнопка Закрытия -->
                     <div class="p-4 bg-gray-50 border-t border-gray-100 text-center rounded-b-3xl">
-                        <button onclick="closeModal()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-xl w-full transition-colors">Отлично, беру!</button>
+                        <button onclick="closeModal()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-xl w-full transition-colors">Отлично, спасибо</button>
                     </div>
                 </div>
             `;
             modalBody.innerHTML = html;
             modalOverlay.classList.remove('hidden');
+            // Анимация появления модального окна
             setTimeout(() => {
                 modalOverlay.classList.remove('opacity-0');
                 modalContent.classList.remove('scale-95');
@@ -268,29 +490,35 @@
         }
 
         function closeModal() {
+            // Анимация закрытия модального окна
             modalOverlay.classList.add('opacity-0');
             modalContent.classList.remove('scale-100');
             modalContent.classList.add('scale-95');
             setTimeout(() => { modalOverlay.classList.add('hidden'); }, 300);
         }
 
+        // Закрытие модального окна при клике на оверлей
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
-        // --- THINKING SCREEN ---
+        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавлен onerror для GIF ---
         function showThinkingAndRenderResults() {
+            const gifUrl = videoUrls['thinking'];
+            const fallbackUrl = videoUrls['fallback'];
             // Показываем экран "Думаю"
             const thinkingHTML = `
                 <div class="text-center p-8 flex flex-col items-center justify-center min-h-[300px] fade-in">
                     <div class="flex justify-center mb-6">
-                        <img src="${videoUrls['thinking']}" alt="Маскот Коно думает" 
-                             class="w-48 h-48 rounded-full object-cover border-4 border-indigo-400 p-0.5 shadow-xl">
+                        <img 
+                            src="${gifUrl}" 
+                            onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
+                            alt="Маскот Коно думает" 
+                            class="w-48 h-48 rounded-full object-cover border-4 border-indigo-400 p-0.5 shadow-xl">
                     </div>
                     <div class="bg-indigo-50 p-4 rounded-xl shadow-lg border-2 border-indigo-200">
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">🤔 Я вас понял!</h2>
                         <p class="text-xl text-indigo-600 font-semibold">Дайте подумать...</p>
                     </div>
                     <div class="mt-4 flex items-center">
-                        <!-- Можно добавить спиннер или просто текст -->
                         <p class="text-sm text-gray-500">Генерирую идеальный выбор...</p>
                     </div>
                 </div>
@@ -306,25 +534,75 @@
             }, 3000); // 3 секунды паузы
         }
 
-        // --- RENDER RESULTS AS CARDS ---
+        // --- ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ЭФФЕКТА КАРУСЕЛИ ---
+        function updateCarouselEffect() {
+            const carousel = document.getElementById('results-carousel');
+            if (!carousel) return;
+
+            const cards = carousel.querySelectorAll('.noodle-card');
+            if (cards.length === 0) return;
+
+            const carouselRect = carousel.getBoundingClientRect();
+            const carouselCenter = carouselRect.left + carouselRect.width / 2;
+
+            cards.forEach(card => {
+                const cardRect = card.getBoundingClientRect();
+                const cardCenter = cardRect.left + cardRect.width / 2;
+                
+                const distance = Math.abs(carouselCenter - cardCenter);
+                const maxDistance = cardRect.width * 1.5;
+                const normalizedDistance = Math.min(1, distance / maxDistance);
+
+                const maxScale = 1.05; 
+                const minScale = 0.85; 
+                const scale = maxScale - (normalizedDistance * (maxScale - minScale));
+
+                const opacity = 1 - (normalizedDistance * 0.3); 
+                
+                const shadowX = (1 - normalizedDistance) * 4; 
+                const shadowY = (1 - normalizedDistance) * 8; 
+                const shadowBlur = (1 - normalizedDistance) * 20; 
+                const shadowColor = `rgba(0, 0, 0, ${0.15 * (1 - normalizedDistance)})`;
+
+                card.style.transform = `scale(${scale})`;
+                card.style.opacity = opacity;
+                card.style.boxShadow = `${shadowX}px ${shadowY}px ${shadowBlur}px 0 ${shadowColor}`;
+                
+                card.style.zIndex = Math.floor(10 - normalizedDistance * 10); 
+            });
+        }
+
+
+        // --- RENDER RESULTS AS CARDS (Отображение карточек с результатами) ---
+        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавлен onerror для GIF ---
         function renderResult() {
             const list = currentState.availableNoodles;
+            const fallbackUrl = videoUrls['fallback'];
 
             // Сценарий 1: Ошибка, база данных пуста
             if (noodleDatabase.length === 0) {
-                 let errorHTML = `<div class="p-6 bg-red-100 border border-red-300 rounded-xl text-center"><h2 class="text-2xl font-bold text-red-800 mb-3">⚠️ Ошибка</h2><p class="text-gray-700">База данных пуста.</p></div>`;
+                 let errorHTML = `
+                    <div class="text-center p-6 bg-red-100 border border-red-300 rounded-xl">
+                        <h2 class="text-2xl font-bold text-red-800 mb-3">⚠️ Ошибка Загрузки</h2>
+                        <p class="text-gray-700">Не удалось загрузить меню по внешней ссылке. Вы видите резервные данные.</p>
+                        <p class="text-sm text-red-500 mt-2">Пожалуйста, проверьте, что ваша ссылка на Google Sheets опубликована и корректна.</p>
+                    </div>
+                 `;
                  setMainContent(errorHTML);
                  renderControls();
                  return;
             }
 
-            // Сценарий 2: Ошибка, ничего не найдено
+            // Сценарий 2: Ошибка, ничего не найдено по фильтрам
             if (list.length === 0) {
                  const gifUrl = videoUrls['sad'];
                  let errorHTML = `
                     <div class="text-center p-8 fade-in">
                         <div class="flex justify-center mb-6">
-                            <img src="${gifUrl}" class="w-48 h-48 rounded-full object-cover border-4 border-red-400 p-0.5 shadow-xl" alt="Маскот Коно грустит">
+                            <img 
+                                src="${gifUrl}" 
+                                onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
+                                class="w-48 h-48 rounded-full object-cover border-4 border-red-400 p-0.5 shadow-xl" alt="Маскот Коно грустит">
                         </div>
                         <div class="bg-red-100 p-4 rounded-xl border-2 border-red-300">
                             <h2 class="text-2xl font-bold text-red-800 mb-2">😭 О нет!</h2>
@@ -339,38 +617,86 @@
             }
 
             // Сценарий 3: Успешный результат
+            const gifUrl = videoUrls['greeting']; // Используем greeting для успеха
             let resultHTML = `
                 <div class="text-center mb-6 fade-in">
                     <div class="flex justify-center mb-4">
-                         <img src="${videoUrls['greeting']}" class="w-32 h-32 rounded-full object-cover border-4 border-green-300 p-0.5 shadow-lg" alt="Маскот Коно рад">
+                         <img 
+                            src="${gifUrl}" 
+                            onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
+                            class="w-32 h-32 rounded-full object-cover border-4 border-green-300 p-0.5 shadow-lg" alt="Маскот Коно рад">
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800">Готово! Вот что я нашел:</h2>
-                    <p class="text-sm text-gray-500 mt-1">Нажмите на карточку, чтобы узнать детали.</p>
+                    <p class="text-sm text-gray-500 mt-1">Пролистайте (свайп влево/вправо), чтобы увидеть все варианты. Нажмите на карточку для деталей.</p>
                 </div>
-                <div class="grid grid-cols-2 gap-4 fade-in pb-20">
+                
+                <!-- Контейнер для центрирования прокручиваемых элементов (добавляет padding-x для центровки первой/последней карточки) -->
+                <div class="relative overflow-hidden -mx-6 fade-in">
+                    <div id="results-carousel" class="flex overflow-x-scroll space-x-4 pb-4 pl-6 pr-6">
             `;
 
             list.forEach(noodle => {
+                // Добавлен класс snap-center для прилипания к центру
                 resultHTML += `
-                    <div class="glass-card rounded-2xl shadow-md overflow-hidden flex flex-col h-full noodle-card" onclick="openModal('${noodle.id}')">
-                        <div class="h-32 w-full bg-gray-100 relative">
-                            <img src="${noodle.image}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" class="w-full h-full object-cover">
-                        </div>
-                        <div class="p-3 flex-grow flex flex-col justify-between bg-white/50 backdrop-blur-sm"> <!-- Светлый полупрозрачный фон для контента карточки -->
-                            <h3 class="font-bold text-gray-800 text-sm leading-tight mb-1">${noodle.name_ru}</h3>
-                            <div class="flex flex-wrap gap-1 mt-2">
-                                <span class="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-100">${noodle.spiceLevel_ru}</span>
+                    <div class="glass-card rounded-xl overflow-hidden flex-shrink-0 snap-center w-11/12 sm:w-80 p-3 noodle-card" onclick="openModal('${noodle.id}')">
+                         <!-- Обновленная горизонтальная компоновка внутри карточки -->
+                         <div class="flex items-center w-full">
+                            <!-- Изображение: фиксированный квадрат 64x64px -->
+                            <div class="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden mr-4"> 
+                                <img src="${noodle.image}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" class="w-full h-full object-cover">
                             </div>
+                            
+                            <!-- Текстовая область -->
+                            <div class="flex-grow min-w-0"> 
+                                <h3 class="font-bold text-gray-800 text-base leading-tight truncate">${noodle.name_ru}</h3>
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    <span class="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-medium">${noodle.spiceLevel_ru}</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">${noodle.preparation_ru}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Стрелка-индикатор -->
+                            <svg class="flex-shrink-0 ml-3 h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
                         </div>
                     </div>
                 `;
             });
             
-            resultHTML += `</div>`;
+            resultHTML += `</div></div><div class="h-12"></div>`; // Закрываем контейнеры и добавляем отступ
             setMainContent(resultHTML);
+            
+            // --- ЛОГИКА ДЛЯ ЭФФЕКТА КАРУСЕЛИ ---
+            const carouselElement = document.getElementById('results-carousel');
+            if (carouselElement) {
+                // Вычисление и применение padding для центрирования
+                const appContainer = document.getElementById('main-app-content');
+                if (appContainer) {
+                    const appWidth = appContainer.offsetWidth - (6 * 2); 
+                    const cardWidth = Math.min(320, appWidth * 0.9); 
+                    const paddingNeeded = (appWidth / 2) - (cardWidth / 2);
+
+                    carouselElement.style.paddingLeft = `${paddingNeeded}px`;
+                    carouselElement.style.paddingRight = `${paddingNeeded}px`;
+                    carouselElement.style.marginLeft = `-${paddingNeeded}px`; 
+
+                    carouselElement.querySelectorAll('.noodle-card').forEach(card => {
+                        card.style.width = `${cardWidth}px`;
+                    });
+                }
+                
+                // Инициализация и слушатели событий
+                updateCarouselEffect();
+                carouselElement.addEventListener('scroll', updateCarouselEffect);
+                window.addEventListener('resize', updateCarouselEffect);
+                setTimeout(updateCarouselEffect, 100); 
+            }
+            
             renderControls();
         }
 
+        // --- CONTROL BUTTONS (Отображение кнопок управления) ---
         function renderControls() {
             controlArea.innerHTML = '';
             let button;
@@ -387,34 +713,46 @@
             if (button) controlArea.appendChild(button);
         }
 
-        // Обновленная функция startGreeting: мгновенная загрузка и отображение
+        // Обновленная функция startGreeting: загрузка данных и показ приветствия
         async function startGreeting() {
             const mainContent = document.getElementById('main-app-content');
             
-            // 1. Загружаем данные
-            noodleDatabase = await loadNoodleDatabase();
+            // 1. Сразу показываем главный контент и индикатор загрузки
+            mainContent.classList.remove('hidden');
+            loadingIndicator.classList.remove('hidden');
+            setMainContent(''); 
+
+            // 2. Загружаем данные
+            const loadResult = await loadNoodleDatabase(); // Получаем объект с данными и статусом
+            noodleDatabase = loadResult.data;
+            isFallbackData = loadResult.isFallback; // Устанавливаем глобальный флаг
             currentState.availableNoodles = [...noodleDatabase];
             
-            // 2. Сразу показываем главный контент
-            mainContent.classList.remove('hidden');
+            // 3. Скрываем индикатор
+            loadingIndicator.classList.add('hidden');
 
             if (noodleDatabase.length === 0) {
+                // Если база данных пуста (даже резервная), показываем экран ошибки
                 currentState.step = -2;
                 renderResult(); 
             } else {
+                // Иначе показываем стартовый экран
                 currentState.step = 0;
                 renderStartScreen(); 
             }
         }
 
+        // Обработка ответа пользователя на вопрос
         function handleAnswer(key, value) {
-            setMainContent('');
+            setMainContent(''); // Очищаем область контента для плавного перехода
             currentState.filters[key] = value;
+            // Применяем фильтр к оставшимся блюдам
             currentState.availableNoodles = currentState.availableNoodles.filter(noodle => noodle[key] === value);
             currentState.step++;
             startNextStep();
         }
 
+        // Переход к следующему шагу (вопросу или результатам)
         function startNextStep() {
             // Если после фильтрации ничего не осталось
             if (currentState.availableNoodles.length === 0) {
@@ -432,12 +770,14 @@
             const currentQuestion = questionFlow[currentState.step - 1];
             let options = currentQuestion.options_ru;
             
-            // Динамическая фильтрация опций по оставшимся блюдам
+            // Динамическая фильтрация опций (например, для вкуса)
             if (currentQuestion.options_source === "dynamic_from_filter") {
+                // Извлекаем уникальные значения ключа (вкуса) из оставшихся блюд
                 const remainingFlavors = [...new Set(currentState.availableNoodles.map(n => n[currentQuestion.key]))];
                 options = remainingFlavors.sort(); 
             }
 
+            // Если доступных опций нет, это ошибка фильтрации
             if (options.length === 0) {
                 currentState.step = -2;
                 renderResult();
@@ -457,12 +797,14 @@
             renderQuestionStep(currentQuestion, options);
         }
 
+        // Сброс состояния и начало заново
         function restart() {
             currentState = { step: 0, filters: {}, availableNoodles: [] };
-            currentState.availableNoodles = [...noodleDatabase];
-            renderStartScreen();
+            // При рестарте вызываем startGreeting для повторной попытки загрузки данных
+            startGreeting(); 
         }
 
+        // Запуск приложения после загрузки DOM
         document.addEventListener('DOMContentLoaded', startGreeting);
     </script>
 </body>
