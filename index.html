@@ -195,7 +195,8 @@
 
         // Поток вопросов
         const questionFlow = [
-            { key: 'preparation_ru', prompt_ru: "С чего начнем? Вы любите рамён <b>с бульоном</b> или предпочитаете <b>без бульона</b>?", options_ru: ["С бульоном", "Без бульона"], isMultiValue: false },
+            // ИЗМЕНЕНО: Обновленный текст вопроса
+            { key: 'preparation_ru', prompt_ru: "С чего начнем ? Какой рамён попробуем?", options_ru: ["С бульоном", "Без бульона"], isMultiValue: false },
             { key: 'spiceLevel_ru', prompt_ru: "Как насчет остроты? Выберите свой уровень:", options_ru: ["Не острая", "Средняя", "Острая"], isMultiValue: false },
             { key: 'baseFlavors_ru', prompt_ru: "Отлично. А какой вкус вы ищете сегодня?", options_source: "dynamic_from_filter", isMultiValue: true } 
         ];
