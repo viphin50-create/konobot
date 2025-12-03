@@ -215,6 +215,9 @@
         // --- STATE (Состояние приложения) и DOM ELEMENTS ---
         let noodleDatabase = []; 
         let isFallbackData = false; 
+        // ДОБАВЛЕНО: Флаг для отслеживания, был ли первый запуск завершен.
+        let isInitialLoadComplete = false;
+        
         let currentState = { 
             step: 0, 
             filters: {}, 
@@ -327,29 +330,32 @@
         }
 
         // --- ИНИЦИАЛИЗАЦИЯ И СКРЫТИЕ SPLASH-SCREEN ---
-        async function initializeApp() {
-            // 1. Создаем промис для минимальной продолжительности показа экрана (3000 мс = 3 секунды)
-            const minimumDisplayTime = new Promise(resolve => setTimeout(resolve, 3000));
+        async function initializeApp(isRestart = false) { // ДОБАВЛЕНО: Параметр isRestart
             
-            // 2. Загружаем данные
-            const dataLoadPromise = loadNoodleDatabase();
+            let loadResult;
 
-            // 3. Ждем, пока загрузятся данные И пройдет минимум 3 секунды
-            const [loadResult] = await Promise.all([dataLoadPromise, minimumDisplayTime]);
-            
-            noodleDatabase = loadResult.data;
-            isFallbackData = loadResult.isFallback; 
-            currentState.availableNoodles = [...noodleDatabase];
-            
-            // 4. Скрываем Splash Screen (плавное затухание)
-            splashScreen.style.opacity = '0';
-            setTimeout(() => {
+            if (isRestart) {
+                // Если это перезапуск, используем уже загруженную базу данных, если она есть
+                if (noodleDatabase.length === 0 && !isFallbackData) {
+                    // Если данных нет, загружаем их
+                     loadResult = await loadNoodleDatabase();
+                } else {
+                    // Используем данные, которые уже есть в памяти (мгновенно)
+                    loadResult = { data: noodleDatabase, isFallback: isFallbackData };
+                }
+                
+                // Сразу устанавливаем данные и переходим к стартовому экрану без задержки
+                noodleDatabase = loadResult.data;
+                isFallbackData = loadResult.isFallback; 
+                currentState.availableNoodles = [...noodleDatabase];
+                
+                // Скрываем Splash Screen (если он каким-то образом был виден)
                 splashScreen.classList.add('hidden');
-                // 5. Показываем основной контент с анимацией
-                mainAppContent.classList.remove('hidden');
-                mainAppContent.style.opacity = '1';
+                // Показываем основной контент с анимацией
+                mainAppContent.classList.remove('hidden', 'opacity-0');
+                mainAppContent.classList.add('opacity-100');
 
-                // 6. Переход к первому экрану (Приветствие или Ошибка)
+                // Переход к первому экрану (Приветствие или Ошибка)
                 if (noodleDatabase.length === 0) {
                     currentState.step = -2;
                     renderResult(); 
@@ -357,7 +363,40 @@
                     currentState.step = 0;
                     renderStartScreen(); 
                 }
-            }, 500); // 0.5 секунды для анимации fade-out
+                
+            } else {
+                // --- ЛОГИКА ПЕРВОГО ЗАПУСКА (С ЗАДЕРЖКОЙ SPLASH SCREEN) ---
+                const minimumDisplayTime = new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // 2. Загружаем данные
+                const dataLoadPromise = loadNoodleDatabase();
+
+                // 3. Ждем, пока загрузятся данные И пройдет минимум 3 секунды
+                [loadResult] = await Promise.all([dataLoadPromise, minimumDisplayTime]);
+                
+                noodleDatabase = loadResult.data;
+                isFallbackData = loadResult.isFallback; 
+                currentState.availableNoodles = [...noodleDatabase];
+                isInitialLoadComplete = true; // Устанавливаем флаг первого запуска
+
+                // 4. Скрываем Splash Screen (плавное затухание)
+                splashScreen.style.opacity = '0';
+                setTimeout(() => {
+                    splashScreen.classList.add('hidden');
+                    // 5. Показываем основной контент с анимацией
+                    mainAppContent.classList.remove('hidden');
+                    mainAppContent.style.opacity = '1';
+
+                    // 6. Переход к первому экрану (Приветствие или Ошибка)
+                    if (noodleDatabase.length === 0) {
+                        currentState.step = -2;
+                        renderResult(); 
+                    } else {
+                        currentState.step = 0;
+                        renderStartScreen(); 
+                    }
+                }, 500); // 0.5 секунды для анимации fade-out
+            }
         }
 
         // --- РЕНДЕРИНГ ЭКРАНОВ С ИСПОЛЬЗОВАНИЕМ GIF ---
@@ -453,7 +492,7 @@
                         </p>
                     </div>
                  `;
-            } else if (noodle.preparation_ru === 'Без бульона') {
+            } else if (noodle.preparation_ru === 'Без бульоном') {
                  designationBlock = `
                     <div class="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm">
                         <p class="font-bold text-indigo-800 mb-1 text-sm uppercase tracking-wide flex items-center">
@@ -714,11 +753,12 @@
         // Сброс состояния и начало заново
         function restart() {
             currentState = { step: 0, filters: {}, availableNoodles: [] };
-            initializeApp(); 
+            // ПЕРЕМЕНА: Передаем true, чтобы пропустить задержку splash screen
+            initializeApp(true); 
         }
 
         // Запуск приложения после загрузки DOM
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        document.addEventListener('DOMContentLoaded', () => initializeApp(false)); // Передаем false для первого запуска
     </script>
 </body>
 </html>
