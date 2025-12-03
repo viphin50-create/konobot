@@ -168,7 +168,7 @@
     <script>
         // --- КОНФИГУРАЦИЯ ДАННЫХ И ИСТОЧНИК (GOOGLE SHEETS) ---
         // Ссылка обновлена на предоставленную пользователем
-        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRzcJMQjrWXO96NnjwHMwpj_m-vYy_KkPAzVJcjeUc89QCrnE6EY_cm3VYwVxD7_i_x-IYk0g1_llqB4/pub?gid=1604915448&single=true&output=csv';
+        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnB4au4-MszdpetvxpPpP_ic1lXC7w-2CNGyXqDa4ABC7-gCTQCaehv2Rs6XNMr3hweVIqm2cen2SW/pub?output=csv';
         const PLACEHOLDER_IMAGE = "https://placehold.co/100x100/1e293b/ffffff?text=Фото+Нет";
         
         // --- Fallback Data for when the Google Sheets link fails (e.g., 404) ---
@@ -291,10 +291,11 @@
 
                 // Преобразование и маппинг колонок
                 const mappedData = rawData.map(item => {
+                    // Используем столбцы Name, Photo, Method, Spiciness, Flavor, CookingTime, Toppings
                     const toppingsString = item.Toppings || '';
                     
                     return {
-                        id: item.Name.toLowerCase().replace(/[^a-zа-я0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 5),
+                        id: (item.Name || 'unknown').toLowerCase().replace(/[^a-zа-я0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 5),
                         name_ru: item.Name || 'Неизвестное блюдо',
                         image: item.Photo || PLACEHOLDER_IMAGE,
                         preparation_ru: item.Method || 'С бульоном', // Используем этот ключ для фильтрации и модального окна
