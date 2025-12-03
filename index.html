@@ -209,6 +209,7 @@
             'questionGif': 'https://image2url.com/gifs/1764741716055-e2369ce9-cef3-4743-b5c5-c4e93dd4f444.gif', // GIF для вопросов (который делаем круглым)
             'thinking': 'https://image2url.com/gifs/1764738669270-394beae2-99fc-4a8c-b4c4-b619b62d3538.gif',
             'sad': 'https://image2url.com/gifs/1764740291026-67f3930a-6d5f-453b-b9c4-0e094200e7e0.gif', // GIF для ошибки/нет результатов
+            'success': 'https://image2url.com/gifs/1764743557260-c13bae65-cfd5-4e19-81f9-9b887a9cda63.gif', // ИСПОЛЬЗУЕМ НОВЫЙ GIF ДЛЯ РЕЗУЛЬТАТОВ
             'fallback': 'https://placehold.co/192x192/4f46e5/ffffff?text=Коно' 
         };
 
@@ -621,7 +622,7 @@
             }
 
             // Сценарий 3: Успешный результат (Отображаем сетку)
-            const gifUrl = videoUrls['greeting'];
+            const gifUrl = videoUrls['success']; // ИСПОЛЬЗУЕМ НОВЫЙ GIF
             let resultHTML = `
                 <div class="text-center mb-6 fade-in">
                     <div class="flex justify-center mb-4">
