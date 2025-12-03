@@ -141,10 +141,13 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО (MODAL) -->
-    <div id="modal-overlay" class="fixed inset-0 z-50 hidden flex justify-center items-center p-4 opacity-0 transition-opacity duration-300">
-        <div id="modal-content" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl transform scale-95 transition-transform duration-300">
+    <!-- Обновленные стили для прокрутки на мобильных устройствах: overflow-y-auto и p-4 sm:p-8 для отступов -->
+    <div id="modal-overlay" class="fixed inset-0 z-50 hidden flex justify-center items-center p-4 sm:p-8 opacity-0 transition-opacity duration-300 bg-black bg-opacity-50 backdrop-blur-sm overflow-y-auto">
+        <!-- Обновленные стили для ограничения высоты и прокрутки контента: max-h-[95vh] и overflow-y-auto -->
+        <div id="modal-content" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl transform scale-95 transition-transform duration-300 my-auto max-h-[95vh] overflow-y-auto">
             <div id="modal-body"></div>
-            <button onclick="closeModal()" class="absolute top-3 right-3 bg-white rounded-full p-1 shadow-md hover:bg-gray-100">
+            <!-- Кнопка закрытия, чтобы она всегда была видна, даже если модальное окно прокручивается -->
+            <button onclick="closeModal()" class="absolute top-3 right-3 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 z-50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -155,6 +158,7 @@
     <script>
         // --- КОНФИГУРАЦИЯ ДАННЫХ И ИСТОЧНИК (GOOGLE SHEETS) ---
         // Ссылка на CSV Google Sheets (должна быть опубликована)
+        // ИСПРАВЛЕНО: Обновлена ссылка, чтобы избежать ошибки 404
         const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnB4au4-MszdpetvxpPpP_ic1lXC7w-2CNGyXqDa4ABC7-gCTQCaehv2Rs6XNMr3hweVIqm2cen2SW/pub?output=csv';
         const PLACEHOLDER_IMAGE = "https://placehold.co/100x100/1e293b/ffffff?text=Фото+Нет";
         
@@ -202,7 +206,7 @@
         // --- GIF CONFIG (URLs для разных состояний маскота) ---
         const videoUrls = {
             'greeting': 'https://image2url.com/gifs/1764740584038-dcde9c54-af2e-449c-8219-c083e3301721.gif', // Новый GIF приветствия
-            'questionGif': 'https://image2url.com/gifs/1764696307418-26635021-448f-4588-b4d1-acb956135531.gif',
+            'questionGif': 'https://image2url.com/gifs/1764741716055-e2369ce9-cef3-4743-b5c5-c4e93dd4f444.gif', // GIF для вопросов (который делаем круглым)
             'thinking': 'https://image2url.com/gifs/1764738669270-394beae2-99fc-4a8c-b4c4-b619b62d3538.gif',
             'sad': 'https://image2url.com/gifs/1764740291026-67f3930a-6d5f-453b-b9c4-0e094200e7e0.gif', // GIF для ошибки/нет результатов
             'fallback': 'https://placehold.co/192x192/4f46e5/ffffff?text=Коно' 
@@ -274,8 +278,16 @@
                         }
                     }
                     
-                    const flavorsString = item.Flavor || '';
-                    const baseFlavors = flavorsString.split(',').map(f => f.trim()).filter(f => f.length > 0);
+                    // --- ЛОГИКА ДЛЯ ВКУСОВ (ОБЪЕДИНЕНИЕ Flavor 1 и Flavor 2) ---
+                    const baseFlavors = [];
+                    // Читаем Flavor 1 и Flavor 2 (с учетом того, что заголовки в CSV могут содержать пробелы)
+                    const flavor1 = item['Flavor 1'] ? item['Flavor 1'].trim() : '';
+                    const flavor2 = item['Flavor 2'] ? item['Flavor 2'].trim() : '';
+                    
+                    if (flavor1.length > 0) baseFlavors.push(flavor1);
+                    // Добавляем Flavor 2, только если он не пустой и не является дубликатом Flavor 1 (на всякий случай)
+                    if (flavor2.length > 0 && flavor2 !== flavor1) baseFlavors.push(flavor2);
+                    // -----------------------------------------------------------------
 
                     return {
                         id: (item.Name || 'unknown').toLowerCase().replace(/[^a-zа-я0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 5),
@@ -283,7 +295,7 @@
                         image: item.Photo || PLACEHOLDER_IMAGE,
                         preparation_ru: item.Method || 'С бульоном', 
                         spiceLevel_ru: item.Spiciness || 'Не острая',
-                        baseFlavors_ru: baseFlavors, 
+                        baseFlavors_ru: baseFlavors, // Используем объединенный массив для фильтрации
                         cookingTime_ru: item.CookingTime || '0', 
                         toppings_ru: toppings 
                     };
@@ -350,7 +362,7 @@
 
         // --- РЕНДЕРИНГ ЭКРАНОВ С ИСПОЛЬЗОВАНИЕМ GIF ---
         function renderStartScreen() {
-            // Используем новый GIF для приветствия
+            // Используем GIF для приветствия
             const gifUrl = videoUrls['greeting']; 
             const fallbackUrl = videoUrls['fallback'];
             let warningMessage = '';
@@ -373,7 +385,7 @@
                             src="${gifUrl}" 
                             onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
                             alt="Маскот Коно" 
-                            class="w-36 h-36 rounded-full object-cover border-4 border-indigo-300 p-0.5 shadow-lg">
+                            class="w-48 h-48 rounded-full object-cover border-4 border-indigo-300 p-0.5 shadow-lg">
                     </div>
                     <h2 class="text-2xl font-extrabold text-indigo-700 mb-2">👋 Привет! Я Коно, твой Рамён-Помощник.</h2>
                     <p class="text-gray-500 mb-6">Нажми "Начать выбор", чтобы найти идеальное блюдо для тебя.</p>
@@ -384,17 +396,18 @@
         }
 
         function renderQuestionStep(question, options) {
+            // Использование НОВОГО GIF для вопросов
             const gifUrl = videoUrls['questionGif']; 
             const fallbackUrl = videoUrls['fallback'];
             let questionHTML = `
                 <div class="flex items-start mb-6 space-x-4 fade-in">
-                    <div class="flex-shrink-0 w-36 h-40 overflow-hidden rounded-xl shadow-lg bg-white">
-                        <img 
-                            src="${gifUrl}" 
-                            onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot', 'h-full', 'w-full'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
-                            alt="Маскот Коно" 
-                            class="w-full h-full object-cover">
-                    </div>
+                    <!-- Обновленный блок: теперь изображение круглое (w-36 h-36, rounded-full) -->
+                    <img 
+                        src="${gifUrl}" 
+                        onerror="this.onerror=null; this.src='${fallbackUrl}'; this.alt='Статичный Коно'; this.classList.add('fallback-mascot', 'w-36', 'h-36', 'rounded-full', 'object-cover', 'border-4', 'border-indigo-300', 'p-0.5', 'shadow-lg');"
+                        alt="Маскот Коно" 
+                        class="flex-shrink-0 w-36 h-36 rounded-full object-cover border-4 border-indigo-300 p-0.5 shadow-lg bg-white">
+                    
                     <div class="flex-grow bg-indigo-50 p-4 rounded-xl rounded-tl-none shadow-lg border-2 border-indigo-200">
                         <p class="text-sm font-bold text-indigo-700 mb-1">КОНО (Шаг ${currentState.step}/${questionFlow.length})</p>
                         <p class="text-xl font-semibold text-gray-800">${question.prompt_ru}</p>
@@ -453,7 +466,7 @@
                  `;
             }
 
-
+            // Изменения для компактности: py-3 px-4
             const html = `
                 <div class="relative">
                     <div class="relative w-full aspect-square bg-gray-200 overflow-hidden">
@@ -470,13 +483,12 @@
                         
                         ${designationBlock}
 
-                        <div class="mt-4 bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm text-center">
-                            <p class="font-bold text-yellow-800 mb-2 text-sm uppercase tracking-wide">Режим Варки</p>
+                        <div class="mt-4 bg-yellow-50 py-3 px-4 rounded-xl border border-yellow-200 shadow-sm text-center">
+                            <p class="font-bold text-yellow-800 mb-1 text-sm uppercase tracking-wide">Режим Варки</p>
                             <p class="text-5xl font-extrabold text-gray-900">${noodle.cookingTime_ru}</p>
-                            <p class="text-xs text-gray-500 mt-1">Это код для рамёноварки КОНО.</p>
                         </div>
 
-                        <div class="mt-4 bg-green-50 p-4 rounded-xl border border-green-100">
+                        <div class="mt-4 bg-green-50 py-3 px-4 rounded-xl border border-green-100">
                             <p class="font-bold text-green-800 mb-2 text-sm uppercase tracking-wide">Рекомендую попробовать с нашими топпингами:</p>
                             <ul class="space-y-1 text-sm text-gray-700 list-none pl-0">${toppingsList}</ul>
                         </div>
@@ -502,6 +514,7 @@
             modalContent.classList.add('scale-95');
             setTimeout(() => { modalOverlay.classList.add('hidden'); }, 300);
         }
+        // Убедимся, что клик по оверлею работает, проверяя, что e.target - это именно сам оверлей (а не его дочерний элемент)
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
         // --- ЭКРАН "ДУМАЮ" ---
@@ -641,10 +654,12 @@
             const question = questionFlow.find(q => q.key === key);
 
             if (question && question.isMultiValue) {
+                // Фильтрация для мультизначных полей (например, baseFlavors_ru)
                 currentState.availableNoodles = currentState.availableNoodles.filter(noodle => 
                     noodle[key].includes(value)
                 );
             } else {
+                // Фильтрация для однозначных полей (например, preparation_ru)
                 currentState.availableNoodles = currentState.availableNoodles.filter(noodle => 
                     noodle[key] === value
                 );
@@ -672,6 +687,7 @@
             
             if (currentQuestion.options_source === "dynamic_from_filter") {
                 if (currentQuestion.isMultiValue) {
+                    // Собираем все уникальные вкусы из оставшихся вариантов
                     const allFlavors = currentState.availableNoodles.flatMap(n => n[currentQuestion.key]);
                     options = [...new Set(allFlavors)].sort(); 
                 } else {
