@@ -11,7 +11,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #fcf8e3; 
+            background-color: #fcf8e3; /* Кремовый/Светло-желтый фон */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -29,14 +29,14 @@
             height: 100%;
             background-color: #fcf8e3;
             z-index: 9999;
-            transition: opacity 0.5s ease-out; /* Плавное исчезновение */
+            transition: opacity 0.5s ease-out; 
             display: flex; 
             justify-content: center;
             align-items: center;
             flex-direction: column;
         }
         .splash-text {
-            color: #4f46e5;
+            color: #d97706; /* Amber-600 */
             font-weight: 600;
             animation: pulse 1.5s infinite;
         }
@@ -46,10 +46,11 @@
         }
         /* --- КОНЕЦ СТИЛЕЙ SPLASH SCREEN --- */
 
-        /* --- СТИЛИ ДЛЯ КАРТОЧКИ ПРИЛОЖЕНИЯ (ЭФФЕКТ СТЕКЛА) --- */
+        /* --- СТИЛИ ДЛЯ КАРТОЧКИ ПРИЛОЖЕНИЯ (Лаконичный дизайн) --- */
         .glass-card {
-            background-color: #fcf8e3; 
+            background-color: #ffffff; /* Чистый белый для контраста */
             border: 1px solid rgba(0, 0, 0, 0.05); 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Легкая тень */
         }
 
         /* Анимации */
@@ -68,7 +69,7 @@
         /* CSS Spinner для загрузки */
         .spinner {
             border: 4px solid rgba(0, 0, 0, 0.1);
-            border-top: 4px solid #4f46e5; /* indigo-600 */
+            border-top: 4px solid #d97706; /* Amber-600 */
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -81,27 +82,27 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Стили для резервного маскота (если GIF не загрузился) */
+        /* Стили для резервного маскота */
         .fallback-mascot {
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 3rem; 
-            background-color: #eef2ff; 
-            color: #4f46e5; 
+            background-color: #fef3c7; /* Amber-100 */
+            color: #d97706; /* Amber-600 */
             font-weight: bold;
         }
         
         /* Стили для карточек результатов */
         .noodle-card-grid {
-             /* Применяем тень и плавный эффект при наведении для каждой карточки */
-             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+             /* Уменьшенная тень и более легкий эффект при наведении */
+             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
              transition: all 0.2s ease-in-out;
              cursor: pointer;
         }
         .noodle-card-grid:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -109,12 +110,12 @@
     
     <!-- --- ЭКРАН ЗАПУСКА (SPLASH SCREEN) --- -->
     <div id="splash-screen">
-        <!-- Используем прежний GIF для экрана запуска -->
+        <!-- Обновленный бордер на Amber-400 -->
         <img 
             src="https://image2url.com/gifs/1764740376136-5dafd80b-3e40-47c9-b076-32f156c929a8.gif" 
-            onerror="this.onerror=null; this.src='https://placehold.co/192x192/4f46e5/ffffff?text=КОНО'; this.style.borderRadius='50%'; this.style.objectFit='cover';"
+            onerror="this.onerror=null; this.src='https://placehold.co/192x192/f59e0b/ffffff?text=КОНО'; this.style.borderRadius='50%'; this.style.objectFit='cover';"
             alt="Маскот Коно приветствует" 
-            class="w-48 h-48 rounded-full object-cover border-4 border-indigo-400 p-0.5 shadow-xl mb-6">
+            class="w-48 h-48 rounded-full object-cover border-4 border-amber-400 p-0.5 shadow-xl mb-6">
         <div class="flex items-center">
             <div class="spinner"></div>
             <p class="text-xl splash-text">Загружаю базу рамёнов...</p>
@@ -126,7 +127,8 @@
     <div id="main-app-content" class="w-full max-w-lg mx-auto p-6 md:p-8 rounded-2xl glass-card opacity-0 hidden">
         <!-- Header -->
         <header class="mb-6 border-b pb-4">
-            <h1 class="text-3xl font-extrabold text-gray-800">🍜 Рамён-Помощник</h1>
+            <!-- Обновленный цвет текста на Amber-700 -->
+            <h1 class="text-3xl font-extrabold text-amber-700">🍜 Рамён-Помощник</h1>
             <p class="text-sm text-gray-500">Ваш личный консультант по меню</p>
         </header>
 
@@ -140,13 +142,10 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО (MODAL) -->
-    <!-- Обновленные стили для прокрутки на мобильных устройствах: overflow-y-auto и p-4 sm:p-8 для отступов -->
+    <!-- МОДАЛЬНОЕ ОКНО (MODAL) - ЦВЕТА ОСТАВЛЕНЫ ЧИСТЫМИ ДЛЯ ЧИТАЕМОСТИ -->
     <div id="modal-overlay" class="fixed inset-0 z-50 hidden flex justify-center items-center p-4 sm:p-8 opacity-0 transition-opacity duration-300 bg-black bg-opacity-50 backdrop-blur-sm overflow-y-auto">
-        <!-- Обновленные стили для ограничения высоты и прокрутки контента: max-h-[95vh] и overflow-y-auto -->
         <div id="modal-content" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl transform scale-95 transition-transform duration-300 my-auto max-h-[95vh] overflow-y-auto">
             <div id="modal-body"></div>
-            <!-- Кнопка закрытия, чтобы она всегда была видна, даже если модальное окно прокручивается -->
             <button onclick="closeModal()" class="absolute top-3 right-3 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 z-50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -157,8 +156,6 @@
 
     <script>
         // --- КОНФИГУРАЦИЯ ДАННЫХ И ИСТОЧНИК (GOOGLE SHEETS) ---
-        // Ссылка на CSV Google Sheets (должна быть опубликована)
-        // ИСПРАВЛЕНО: Обновлена ссылка, чтобы избежать ошибки 404
         const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnB4au4-MszdpetvxpPpP_ic1lXC7w-2CNGyXqDa4ABC7-gCTQCaehv2Rs6XNMr3hweVIqm2cen2SW/pub?output=csv';
         const PLACEHOLDER_IMAGE = "https://placehold.co/100x100/1e293b/ffffff?text=Фото+Нет";
         
@@ -206,17 +203,16 @@
         // --- GIF CONFIG (URLs для разных состояний маскота) ---
         const videoUrls = {
             'greeting': 'https://image2url.com/gifs/1764740584038-dcde9c54-af2e-449c-8219-c083e3301721.gif', // Новый GIF приветствия
-            'questionGif': 'https://image2url.com/gifs/1764741716055-e2369ce9-cef3-4743-b5c5-c4e93dd4f444.gif', // GIF для вопросов (который делаем круглым)
+            'questionGif': 'https://image2url.com/gifs/1764741716055-e2369ce9-cef3-4743-b5c5-c4e93dd4f444.gif', // GIF для вопросов
             'thinking': 'https://image2url.com/gifs/1764738669270-394beae2-99fc-4a8c-b4c4-b619b62d3538.gif',
             'sad': 'https://image2url.com/gifs/1764740291026-67f3930a-6d5f-453b-b9c4-0e094200e7e0.gif', // GIF для ошибки/нет результатов
-            'success': 'https://image2url.com/gifs/1764743557260-c13bae65-cfd5-4e19-81f9-9b887a9cda63.gif', // ИСПОЛЬЗУЕМ НОВЫЙ GIF ДЛЯ РЕЗУЛЬТАТОВ
-            'fallback': 'https://placehold.co/192x192/4f46e5/ffffff?text=Коно' 
+            'success': 'https://image2url.com/gifs/1764743557260-c13bae65-cfd5-4e19-81f9-9b887a9cda63.gif', // GIF для результатов
+            'fallback': 'https://placehold.co/192x192/f59e0b/ffffff?text=Коно' // Amber-600
         };
 
         // --- STATE (Состояние приложения) и DOM ELEMENTS ---
         let noodleDatabase = []; 
         let isFallbackData = false; 
-        // ДОБАВЛЕНО: Флаг для отслеживания, был ли первый запуск завершен.
         let isInitialLoadComplete = false;
         
         let currentState = { 
@@ -251,8 +247,6 @@
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (line === '') continue;
-                // Использование регулярного выражения для обработки запятых внутри кавычек, если бы они были. 
-                // Здесь полагаемся на то, что поля не содержат запятых, т.к. это простой CSV.
                 const currentline = line.split(',');
                 const obj = {};
                 for (let j = 0; j < headers.length; j++) {
@@ -282,16 +276,12 @@
                         }
                     }
                     
-                    // --- ЛОГИКА ДЛЯ ВКУСОВ (ОБЪЕДИНЕНИЕ Flavor 1 и Flavor 2) ---
                     const baseFlavors = [];
-                    // Читаем Flavor 1 и Flavor 2 (с учетом того, что заголовки в CSV могут содержать пробелы)
                     const flavor1 = item['Flavor 1'] ? item['Flavor 1'].trim() : '';
                     const flavor2 = item['Flavor 2'] ? item['Flavor 2'].trim() : '';
                     
                     if (flavor1.length > 0) baseFlavors.push(flavor1);
-                    // Добавляем Flavor 2, только если он не пустой и не является дубликатом Flavor 1 (на всякий случай)
                     if (flavor2.length > 0 && flavor2 !== flavor1) baseFlavors.push(flavor2);
-                    // -----------------------------------------------------------------
 
                     return {
                         id: (item.Name || 'unknown').toLowerCase().replace(/[^a-zа-я0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 5),
@@ -299,7 +289,7 @@
                         image: item.Photo || PLACEHOLDER_IMAGE,
                         preparation_ru: item.Method || 'С бульоном', 
                         spiceLevel_ru: item.Spiciness || 'Не острая',
-                        baseFlavors_ru: baseFlavors, // Используем объединенный массив для фильтрации
+                        baseFlavors_ru: baseFlavors, 
                         cookingTime_ru: item.CookingTime || '0', 
                         toppings_ru: toppings 
                     };
@@ -320,8 +310,8 @@
         
         function setMainContent(html) { mainArea.innerHTML = html; }
 
-        // Создание интерактивной кнопки
-        function createButton(text, onClick, classes = 'bg-white text-gray-800 border-2 border-indigo-200 hover:bg-indigo-100 font-medium py-3 px-6 rounded-xl user-button flex-grow text-center flex items-center justify-center') {
+        // Создание интерактивной кнопки - Обновлены цвета на Amber
+        function createButton(text, onClick, classes = 'bg-white text-gray-800 border-2 border-amber-300 hover:bg-amber-100 font-medium py-3 px-6 rounded-xl user-button flex-grow text-center flex items-center justify-center') {
             const btn = document.createElement('button');
             const icon = optionIcons[text] || optionIcons['default'];
             btn.innerHTML = `<span class="text-xl mr-2">${icon}</span> ${text}`;
@@ -331,32 +321,25 @@
         }
 
         // --- ИНИЦИАЛИЗАЦИЯ И СКРЫТИЕ SPLASH-SCREEN ---
-        async function initializeApp(isRestart = false) { // ДОБАВЛЕНО: Параметр isRestart
+        async function initializeApp(isRestart = false) { 
             
             let loadResult;
 
             if (isRestart) {
-                // Если это перезапуск, используем уже загруженную базу данных, если она есть
                 if (noodleDatabase.length === 0 && !isFallbackData) {
-                    // Если данных нет, загружаем их
-                     loadResult = await loadNoodleDatabase();
+                    loadResult = await loadNoodleDatabase();
                 } else {
-                    // Используем данные, которые уже есть в памяти (мгновенно)
                     loadResult = { data: noodleDatabase, isFallback: isFallbackData };
                 }
                 
-                // Сразу устанавливаем данные и переходим к стартовому экрану без задержки
                 noodleDatabase = loadResult.data;
                 isFallbackData = loadResult.isFallback; 
                 currentState.availableNoodles = [...noodleDatabase];
                 
-                // Скрываем Splash Screen (если он каким-то образом был виден)
                 splashScreen.classList.add('hidden');
-                // Показываем основной контент с анимацией
                 mainAppContent.classList.remove('hidden', 'opacity-0');
                 mainAppContent.classList.add('opacity-100');
 
-                // Переход к первому экрану (Приветствие или Ошибка)
                 if (noodleDatabase.length === 0) {
                     currentState.step = -2;
                     renderResult(); 
@@ -366,29 +349,22 @@
                 }
                 
             } else {
-                // --- ЛОГИКА ПЕРВОГО ЗАПУСКА (С ЗАДЕРЖКОЙ SPLASH SCREEN) ---
                 const minimumDisplayTime = new Promise(resolve => setTimeout(resolve, 3000));
-                
-                // 2. Загружаем данные
                 const dataLoadPromise = loadNoodleDatabase();
 
-                // 3. Ждем, пока загрузятся данные И пройдет минимум 3 секунды
                 [loadResult] = await Promise.all([dataLoadPromise, minimumDisplayTime]);
                 
                 noodleDatabase = loadResult.data;
                 isFallbackData = loadResult.isFallback; 
                 currentState.availableNoodles = [...noodleDatabase];
-                isInitialLoadComplete = true; // Устанавливаем флаг первого запуска
+                isInitialLoadComplete = true; 
 
-                // 4. Скрываем Splash Screen (плавное затухание)
                 splashScreen.style.opacity = '0';
                 setTimeout(() => {
                     splashScreen.classList.add('hidden');
-                    // 5. Показываем основной контент с анимацией
                     mainAppContent.classList.remove('hidden');
                     mainAppContent.style.opacity = '1';
 
-                    // 6. Переход к первому экрану (Приветствие или Ошибка)
                     if (noodleDatabase.length === 0) {
                         currentState.step = -2;
                         renderResult(); 
@@ -396,13 +372,12 @@
                         currentState.step = 0;
                         renderStartScreen(); 
                     }
-                }, 500); // 0.5 секунды для анимации fade-out
+                }, 500); 
             }
         }
 
         // --- РЕНДЕРИНГ ЭКРАНОВ С ИСПОЛЬЗОВАНИЕМ GIF ---
         function renderStartScreen() {
-            // Используем GIF для приветствия
             const gifUrl = videoUrls['greeting']; 
             const fallbackUrl = videoUrls['fallback'];
             let warningMessage = '';
@@ -412,7 +387,7 @@
                 warningMessage = `
                     <div class="p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-xl mb-4 text-left fade-in">
                         <p class="font-bold">⚠️ ВНИМАНИЕ: Ошибка загрузки данных</p>
-                        <p class="text-sm">Не удалось загрузить меню по внешней ссылке. Отображаются старые резервные данные. Пожалуйста, убедитесь, что ссылка на таблицу корректна и опубликована в формате CSV.</p>
+                        <p class="text-sm">Не удалось загрузить меню по внешней ссылке. Отображаются старые резервные данные.</p>
                     </div>
                 `;
             }
@@ -421,13 +396,15 @@
                 ${warningMessage} 
                 <div class="text-center p-4">
                     <div class="flex justify-center mb-6">
+                        <!-- Обновленный бордер на Amber-400 -->
                         <img 
                             src="${gifUrl}" 
                             onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
                             alt="Маскот Коно" 
-                            class="w-48 h-48 rounded-full object-cover border-4 border-indigo-300 p-0.5 shadow-lg">
+                            class="w-48 h-48 rounded-full object-cover border-4 border-amber-400 p-0.5 shadow-lg">
                     </div>
-                    <h2 class="text-2xl font-extrabold text-indigo-700 mb-2">👋 Привет! Я Коно, твой Рамён-Помощник.</h2>
+                    <!-- Обновленный цвет текста на Amber-700 -->
+                    <h2 class="text-2xl font-extrabold text-amber-700 mb-2">👋 Привет! Я Коно, твой Рамён-Помощник.</h2>
                     <p class="text-gray-500 mb-6">Нажми "Начать выбор", чтобы найти идеальное блюдо для тебя.</p>
                 </div>
             `;
@@ -436,20 +413,20 @@
         }
 
         function renderQuestionStep(question, options) {
-            // Использование НОВОГО GIF для вопросов
             const gifUrl = videoUrls['questionGif']; 
             const fallbackUrl = videoUrls['fallback'];
             let questionHTML = `
                 <div class="flex items-start mb-6 space-x-4 fade-in">
-                    <!-- Обновленный блок: теперь изображение круглое (w-36 h-36, rounded-full) -->
+                    <!-- Обновленный бордер на Amber-400 -->
                     <img 
                         src="${gifUrl}" 
-                        onerror="this.onerror=null; this.src='${fallbackUrl}'; this.alt='Статичный Коно'; this.classList.add('fallback-mascot', 'w-36', 'h-36', 'rounded-full', 'object-cover', 'border-4', 'border-indigo-300', 'p-0.5', 'shadow-lg');"
+                        onerror="this.onerror=null; this.src='${fallbackUrl}'; this.alt='Статичный Коно'; this.classList.add('fallback-mascot', 'w-36', 'h-36', 'rounded-full', 'object-cover', 'border-4', 'border-amber-400', 'p-0.5', 'shadow-lg');"
                         alt="Маскот Коно" 
-                        class="flex-shrink-0 w-36 h-36 rounded-full object-cover border-4 border-indigo-300 p-0.5 shadow-lg bg-white">
+                        class="flex-shrink-0 w-36 h-36 rounded-full object-cover border-4 border-amber-400 p-0.5 shadow-lg bg-white">
                     
-                    <div class="flex-grow bg-indigo-50 p-4 rounded-xl rounded-tl-none shadow-lg border-2 border-indigo-200">
-                        <p class="text-sm font-bold text-indigo-700 mb-1">КОНО (Шаг ${currentState.step}/${questionFlow.length})</p>
+                    <!-- Обновленный фон и бордер на Amber -->
+                    <div class="flex-grow bg-amber-50 p-4 rounded-xl rounded-tl-none shadow-lg border-2 border-amber-300">
+                        <p class="text-sm font-bold text-amber-700 mb-1">КОНО (Шаг ${currentState.step}/${questionFlow.length})</p>
                         <p class="text-xl font-semibold text-gray-800">${question.prompt_ru}</p>
                     </div>
                 </div>
@@ -475,16 +452,18 @@
                 ? noodle.toppings_ru.map(t => `<li class="flex items-start"><span class="mr-2 text-green-500">✅</span>${t}</li>`).join('')
                 : '<li class="text-gray-500">Любой топпинг по вашему вкусу!</li>';
             
+            // Обновлены цвета тегов на Amber
             const flavorsTags = noodle.baseFlavors_ru.map(f => 
-                `<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium">${f}</span>`
+                `<span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-md font-medium">${f}</span>`
             ).join('');
             
             let designationBlock = '';
             
             if (noodle.preparation_ru === 'С бульоном') {
+                 // Обновлены цвета блока на Amber
                  designationBlock = `
-                    <div class="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm">
-                        <p class="font-bold text-indigo-800 mb-1 text-sm uppercase tracking-wide flex items-center">
+                    <div class="mt-4 bg-amber-50 p-4 rounded-xl border border-amber-200 shadow-sm">
+                        <p class="font-bold text-amber-800 mb-1 text-sm uppercase tracking-wide flex items-center">
                             <span class="text-xl mr-2">ℹ️</span> Обозначение "С бульоном"
                         </p>
                         <p class="text-sm text-gray-700">
@@ -494,9 +473,10 @@
                     </div>
                  `;
             } else if (noodle.preparation_ru === 'Без бульоном') {
+                 // Обновлены цвета блока на Amber
                  designationBlock = `
-                    <div class="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm">
-                        <p class="font-bold text-indigo-800 mb-1 text-sm uppercase tracking-wide flex items-center">
+                    <div class="mt-4 bg-amber-50 p-4 rounded-xl border border-amber-200 shadow-sm">
+                        <p class="font-bold text-amber-800 mb-1 text-sm uppercase tracking-wide flex items-center">
                             <span class="text-xl mr-2">ℹ️</span> Обозначение "Без бульона"
                         </p>
                         <p class="text-sm text-gray-700">
@@ -506,7 +486,7 @@
                  `;
             }
 
-            // Изменения для компактности: py-3 px-4
+            // Обновлены цвета времени варки на Orange
             const html = `
                 <div class="relative">
                     <div class="relative w-full aspect-square bg-gray-200 overflow-hidden">
@@ -516,13 +496,15 @@
                     <div class="p-4">
                         <h3 class="text-2xl font-extrabold text-gray-800 mb-1">${noodle.name_ru}</h3>
                         <div class="flex flex-wrap gap-2 mb-4">
-                            <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-md font-medium">${noodle.preparation_ru}</span>
+                            <!-- Обновлены цвета тегов на Amber/Orange -->
+                            <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-md font-medium">${noodle.preparation_ru}</span>
                             <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-md font-medium">${noodle.spiceLevel_ru}</span>
                             ${flavorsTags} 
                         </div>
                         
                         ${designationBlock}
 
+                        <!-- Обновлены цвета блока на Yellow/Orange -->
                         <div class="mt-4 bg-yellow-50 py-3 px-4 rounded-xl border border-yellow-200 shadow-sm text-center">
                             <p class="font-bold text-yellow-800 mb-1 text-sm uppercase tracking-wide">Режим Варки</p>
                             <p class="text-5xl font-extrabold text-gray-900">${noodle.cookingTime_ru}</p>
@@ -554,7 +536,6 @@
             modalContent.classList.add('scale-95');
             setTimeout(() => { modalOverlay.classList.add('hidden'); }, 300);
         }
-        // Убедимся, что клик по оверлею работает, проверяя, что e.target - это именно сам оверлей (а не его дочерний элемент)
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
         // --- ЭКРАН "ДУМАЮ" ---
@@ -565,15 +546,17 @@
             const thinkingHTML = `
                 <div class="text-center p-8 flex flex-col items-center justify-center min-h-[300px] fade-in">
                     <div class="flex justify-center mb-6">
+                        <!-- Обновленный бордер на Amber-400 -->
                         <img 
                             src="${gifUrl}" 
                             onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
                             alt="Маскот Коно думает" 
-                            class="w-48 h-48 rounded-full object-cover border-4 border-indigo-400 p-0.5 shadow-xl">
+                            class="w-48 h-48 rounded-full object-cover border-4 border-amber-400 p-0.5 shadow-xl">
                     </div>
-                    <div class="bg-indigo-50 p-4 rounded-xl shadow-lg border-2 border-indigo-200">
+                    <!-- Обновленный фон, бордер и текст на Amber -->
+                    <div class="bg-amber-50 p-4 rounded-xl shadow-lg border-2 border-amber-300">
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">🤔 Я вас понял!</h2>
-                        <p class="text-xl text-indigo-600 font-semibold">Дайте подумать...</p>
+                        <p class="text-xl text-amber-600 font-semibold">Дайте подумать...</p>
                     </div>
                     <div class="mt-4 flex items-center">
                         <p class="text-sm text-gray-500">Генерирую идеальный выбор...</p>
@@ -597,7 +580,7 @@
 
             // Сценарий 1 и 2: Ошибка или ничего не найдено
             if (noodleDatabase.length === 0 || list.length === 0) {
-                 const gifUrl = videoUrls['sad']; // Используем GIF для ошибки/нет результатов
+                 const gifUrl = videoUrls['sad']; 
                  let errorTitle = (list.length === 0) ? "😭 О нет!" : "⚠️ Ошибка Загрузки";
                  let errorText = (list.length === 0) ? "По вашим критериям ничего не нашлось. Попробуйте снова!" : "Не удалось загрузить меню. Пожалуйста, проверьте, что ваша ссылка на Google Sheets опубликована.";
                  
@@ -609,6 +592,7 @@
                                 onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
                                 class="w-48 h-48 rounded-full object-cover border-4 border-red-400 p-0.5 shadow-xl" alt="Маскот Коно грустит">
                         </div>
+                        <!-- Цвета оставлены красными для индикации ошибки -->
                         <div class="bg-red-100 p-4 rounded-xl border-2 border-red-300">
                             <h2 class="text-2xl font-bold text-red-800 mb-2">${errorTitle}</h2>
                             <p class="text-gray-700">${errorText}</p>
@@ -622,14 +606,15 @@
             }
 
             // Сценарий 3: Успешный результат (Отображаем сетку)
-            const gifUrl = videoUrls['success']; // ИСПОЛЬЗУЕМ НОВЫЙ GIF
+            const gifUrl = videoUrls['success']; 
             let resultHTML = `
                 <div class="text-center mb-6 fade-in">
                     <div class="flex justify-center mb-4">
+                         <!-- Обновленный бордер на Green-400 (Success) -->
                          <img 
                             src="${gifUrl}" 
                             onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('fallback-mascot'); this.classList.remove('object-cover'); this.alt='Статичный Коно';"
-                            class="w-32 h-32 rounded-full object-cover border-4 border-green-300 p-0.5 shadow-lg" alt="Маскот Коно рад">
+                            class="w-32 h-32 rounded-full object-cover border-4 border-green-400 p-0.5 shadow-lg" alt="Маскот Коно рад">
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800">Готово! Вот что я нашел:</h2>
                     <p class="text-sm text-gray-500 mt-1">Нажмите на карточку, чтобы увидеть детали и код варки.</p>
@@ -641,7 +626,8 @@
 
             list.forEach(noodle => {
                 const flavorTags = noodle.baseFlavors_ru.slice(0, 2).map(f => // Показываем только 2 тега, чтобы не перегружать сетку
-                    `<span class="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">${f}</span>`
+                    // Обновлены цвета тегов на Amber
+                    `<span class="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded-full font-medium">${f}</span>`
                 ).join('');
 
                 resultHTML += `
@@ -653,7 +639,8 @@
                             <div class="flex-grow min-w-0"> 
                                 <h3 class="font-bold text-gray-800 text-base leading-tight">${noodle.name_ru}</h3>
                                 <div class="flex flex-wrap gap-1 mt-1">
-                                    <span class="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-medium">${noodle.spiceLevel_ru}</span>
+                                    <!-- Обновлены цвета тегов на Amber/Orange -->
+                                    <span class="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded-full font-medium">${noodle.preparation_ru}</span>
                                     ${flavorTags}
                                 </div>
                             </div>
@@ -676,10 +663,11 @@
             controlArea.innerHTML = '';
             let button;
             if (currentState.step === 0) {
+                // Обновлены цвета кнопки на Amber-600
                 button = createButton('Начать выбор', () => {
                     currentState.step = 1;
                     startNextStep();
-                }, 'bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-full w-full user-button flex items-center justify-center');
+                }, 'bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-full w-full user-button flex items-center justify-center');
             } else if (currentState.step < 0) {
                  button = createButton('Начать сначала', restart, 'bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-full user-button flex items-center justify-center');
             } 
@@ -694,12 +682,10 @@
             const question = questionFlow.find(q => q.key === key);
 
             if (question && question.isMultiValue) {
-                // Фильтрация для мультизначных полей (например, baseFlavors_ru)
                 currentState.availableNoodles = currentState.availableNoodles.filter(noodle => 
                     noodle[key].includes(value)
                 );
             } else {
-                // Фильтрация для однозначных полей (например, preparation_ru)
                 currentState.availableNoodles = currentState.availableNoodles.filter(noodle => 
                     noodle[key] === value
                 );
@@ -727,7 +713,6 @@
             
             if (currentQuestion.options_source === "dynamic_from_filter") {
                 if (currentQuestion.isMultiValue) {
-                    // Собираем все уникальные вкусы из оставшихся вариантов
                     const allFlavors = currentState.availableNoodles.flatMap(n => n[currentQuestion.key]);
                     options = [...new Set(allFlavors)].sort(); 
                 } else {
@@ -742,7 +727,6 @@
                 return;
             }
 
-            // Если остался только один вариант, пропускаем вопрос и переходим к следующему шагу
             if (options.length === 1 && currentState.step < questionFlow.length) {
                 handleAnswer(currentQuestion.key, options[0]); 
                 return;
@@ -754,12 +738,11 @@
         // Сброс состояния и начало заново
         function restart() {
             currentState = { step: 0, filters: {}, availableNoodles: [] };
-            // ПЕРЕМЕНА: Передаем true, чтобы пропустить задержку splash screen
             initializeApp(true); 
         }
 
         // Запуск приложения после загрузки DOM
-        document.addEventListener('DOMContentLoaded', () => initializeApp(false)); // Передаем false для первого запуска
+        document.addEventListener('DOMContentLoaded', () => initializeApp(false)); 
     </script>
 </body>
 </html>
