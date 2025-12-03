@@ -11,43 +11,47 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            /* Цвет фона, совпадающий с GIF и карточкой */
             background-color: #fcf8e3; 
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Убеждаемся, что приложение занимает всю доступную высоту (например, в мини-аппе) */
             min-height: 100vh;
             margin: 0; 
             position: relative;
         }
         
+        /* --- ЭКРАН ЗАПУСКА (SPLASH SCREEN) --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fcf8e3;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out; /* Плавное исчезновение */
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .splash-text {
+            color: #4f46e5;
+            font-weight: 600;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        /* --- КОНЕЦ СТИЛЕЙ SPLASH SCREEN --- */
+
         /* --- СТИЛИ ДЛЯ КАРТОЧКИ ПРИЛОЖЕНИЯ (ЭФФЕКТ СТЕКЛА) --- */
         .glass-card {
             background-color: #fcf8e3; 
             border: 1px solid rgba(0, 0, 0, 0.05); 
         }
-        /* --- КОНЕЦ СТИЛЕЙ КАРТОЧКИ --- */
 
-        /* Основной контейнер */
-        #main-app-content {
-            margin: 0 !important;
-            max-width: 100% !important;
-        }
-
-        /* Область контента */
-        #main-interaction-area {
-            min-height: 250px; 
-        }
-
-        .user-button {
-            transition: all 0.2s;
-        }
-        .user-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
-        }
-        
         /* Анимации */
         .fade-in {
             animation: fadeIn 0.5s ease-out;
@@ -57,44 +61,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Стили для карточки блюда (миниатюра) - теперь управляются JS */
-        .noodle-card {
-            /* Добавляем плавность для динамических изменений scale и opacity */
-            transition: transform 0.3s ease-out, box-shadow 0.3s ease, opacity 0.3s ease; 
-            cursor: pointer;
-            transform-origin: center center; /* Масштабирование должно происходить от центра */
-            /* Начальное состояние, чтобы избежать пустого места */
-            transform: scale(0.9); 
-            box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Стили для карусели результатов */
-        #results-carousel {
-            /* Скрытие стандартного скроллбара, но сохранение скроллинга */
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-            /* Добавляем центрирование элементов при скролле */
-            scroll-snap-type: x mandatory; 
-        }
-        #results-carousel::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
-        }
-        /* Обязательный класс для прилипания элементов к центру */
-        .snap-center {
-            scroll-snap-align: center;
-        }
-
-
-        /* Стили для модального окна */
-        #modal-overlay {
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-        }
-        #modal-content {
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
         .hidden {
             display: none !important;
         }
@@ -107,29 +73,57 @@
             width: 24px;
             height: 24px;
             animation: spin 1s linear infinite;
+            margin-right: 12px;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        /* Стиль для резервного маскота (если GIF не загрузился) */
+        
+        /* Стили для резервного маскота (если GIF не загрузился) */
         .fallback-mascot {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem; /* Для эмодзи */
-            background-color: #eef2ff; /* Светло-голубой фон */
-            color: #4f46e5; /* Индиго текст */
+            font-size: 3rem; 
+            background-color: #eef2ff; 
+            color: #4f46e5; 
             font-weight: bold;
+        }
+        
+        /* Стили для карточек результатов */
+        .noodle-card-grid {
+             /* Применяем тень и плавный эффект при наведении для каждой карточки */
+             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+             transition: all 0.2s ease-in-out;
+             cursor: pointer;
+        }
+        .noodle-card-grid:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
+    
+    <!-- --- ЭКРАН ЗАПУСКА (SPLASH SCREEN) --- -->
+    <div id="splash-screen">
+        <!-- Используем прежний GIF для экрана запуска -->
+        <img 
+            src="https://image2url.com/gifs/1764740376136-5dafd80b-3e40-47c9-b076-32f156c929a8.gif" 
+            onerror="this.onerror=null; this.src='https://placehold.co/192x192/4f46e5/ffffff?text=КОНО'; this.style.borderRadius='50%'; this.style.objectFit='cover';"
+            alt="Маскот Коно приветствует" 
+            class="w-48 h-48 rounded-full object-cover border-4 border-indigo-400 p-0.5 shadow-xl mb-6">
+        <div class="flex items-center">
+            <div class="spinner"></div>
+            <p class="text-xl splash-text">Загружаю базу рамёнов...</p>
+        </div>
+    </div>
+    <!-- ----------------------------------- -->
 
     <!-- Основной контент приложения -->
-    <div id="main-app-content" class="w-full max-w-lg mx-auto p-6 md:p-8 rounded-2xl glass-card hidden">
+    <div id="main-app-content" class="w-full max-w-lg mx-auto p-6 md:p-8 rounded-2xl glass-card opacity-0 hidden">
         <!-- Header -->
         <header class="mb-6 border-b pb-4">
             <h1 class="text-3xl font-extrabold text-gray-800">🍜 Рамён-Помощник</h1>
@@ -138,10 +132,7 @@
 
         <!-- Main Dynamic Interaction Area -->
         <div id="main-interaction-area" class="space-y-6 pb-4 fade-in">
-            <div id="loading-indicator" class="flex justify-center p-4">
-                <div class="spinner"></div>
-                <span class="ml-3 text-gray-500">Загрузка меню...</span>
-            </div>
+            <!-- Контент будет загружен после скрытия splash-screen -->
         </div>
 
         <!-- Control Buttons Area -->
@@ -163,11 +154,11 @@
 
     <script>
         // --- КОНФИГУРАЦИЯ ДАННЫХ И ИСТОЧНИК (GOOGLE SHEETS) ---
-        // Ссылка обновлена на предоставленную пользователем
+        // Ссылка на CSV Google Sheets (должна быть опубликована)
         const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnB4au4-MszdpetvxpPpP_ic1lXC7w-2CNGyXqDa4ABC7-gCTQCaehv2Rs6XNMr3hweVIqm2cen2SW/pub?output=csv';
         const PLACEHOLDER_IMAGE = "https://placehold.co/100x100/1e293b/ffffff?text=Фото+Нет";
         
-        // --- Fallback Data for when the Google Sheets link fails (e.g., 404) ---
+        // --- Fallback Data (резервные данные) ---
         const FALLBACK_DATA = [
             {
                 id: 'shin_ramyun_fallback',
@@ -175,9 +166,9 @@
                 image: 'https://placehold.co/100x100/EF4444/FFFFFF?text=Shin',
                 preparation_ru: 'С бульоном', 
                 spiceLevel_ru: 'Средняя',
-                baseFlavors_ru: ['Говядина', 'Классика'], // Обновлено до массива
+                baseFlavors_ru: ['Говядина', 'Классика'],
                 cookingTime_ru: '5', 
-                toppings_ru: ['Яйцо', 'Кимчи', 'Зеленый лук'] // Корректный массив топингов
+                toppings_ru: ['Яйцо', 'Кимчи', 'Зеленый лук']
             },
             {
                 id: 'buldak_2x_fallback',
@@ -185,9 +176,9 @@
                 image: 'https://placehold.co/100x100/F97316/FFFFFF?text=Buldak',
                 preparation_ru: 'Без бульона', 
                 spiceLevel_ru: 'Острая',
-                baseFlavors_ru: ['Курица', 'Острое'], // Обновлено до массива
+                baseFlavors_ru: ['Курица', 'Острое'],
                 cookingTime_ru: '15', 
-                toppings_ru: ['Сыр', 'Кунжут', 'Нори'] // Корректный массив топингов
+                toppings_ru: ['Сыр', 'Кунжут', 'Нори']
             },
             {
                 id: 'jjapagetti_fallback',
@@ -195,34 +186,44 @@
                 image: 'https://placehold.co/100x100/4B5563/FFFFFF?text=Jjap',
                 preparation_ru: 'Без бульона', 
                 spiceLevel_ru: 'Не острая',
-                baseFlavors_ru: ['Черные бобы', 'Паста'], // Обновлено до массива
+                baseFlavors_ru: ['Черные бобы', 'Паста'],
                 cookingTime_ru: '7', 
-                toppings_ru: ['Огурцы', 'Масло', 'Говядина'] // Корректный массив топингов
+                toppings_ru: ['Огурцы', 'Масло', 'Говядина']
             }
         ];
 
-        // --- ФУНКЦИЯ ПАРСИНГА CSV ---
-        function csvToJSON(csv) {
-            const lines = csv.split('\n');
-            // Заголовки - первая строка
-            const headers = lines[0].split(',').map(header => header.trim());
-            const result = [];
+        // Поток вопросов
+        const questionFlow = [
+            { key: 'preparation_ru', prompt_ru: "С чего начнем? Вы любите рамён <b>с бульоном</b> или предпочитаете <b>без бульона</b>?", options_ru: ["С бульоном", "Без бульона"], isMultiValue: false },
+            { key: 'spiceLevel_ru', prompt_ru: "Как насчет остроты? Выберите свой уровень:", options_ru: ["Не острая", "Средняя", "Острая"], isMultiValue: false },
+            { key: 'baseFlavors_ru', prompt_ru: "Отлично. А какой вкус вы ищете сегодня?", options_source: "dynamic_from_filter", isMultiValue: true } 
+        ];
 
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (line === '') continue;
+        // --- GIF CONFIG (URLs для разных состояний маскота) ---
+        const videoUrls = {
+            'greeting': 'https://image2url.com/gifs/1764740584038-dcde9c54-af2e-449c-8219-c083e3301721.gif', // Новый GIF приветствия
+            'questionGif': 'https://image2url.com/gifs/1764696307418-26635021-448f-4588-b4d1-acb956135531.gif',
+            'thinking': 'https://image2url.com/gifs/1764738669270-394beae2-99fc-4a8c-b4c4-b619b62d3538.gif',
+            'sad': 'https://image2url.com/gifs/1764740291026-67f3930a-6d5f-453b-b9c4-0e094200e7e0.gif', // GIF для ошибки/нет результатов
+            'fallback': 'https://placehold.co/192x192/4f46e5/ffffff?text=Коно' 
+        };
 
-                // Используем простую логику split, так как данные хранятся в простом формате
-                const currentline = line.split(',');
-
-                const obj = {};
-                for (let j = 0; j < headers.length; j++) {
-                    obj[headers[j]] = currentline[j] ? currentline[j].trim() : '';
-                }
-                result.push(obj);
-            }
-            return result;
-        }
+        // --- STATE (Состояние приложения) и DOM ELEMENTS ---
+        let noodleDatabase = []; 
+        let isFallbackData = false; 
+        let currentState = { 
+            step: 0, 
+            filters: {}, 
+            availableNoodles: []
+        };
+        
+        const mainAppContent = document.getElementById('main-app-content');
+        const splashScreen = document.getElementById('splash-screen');
+        const mainArea = document.getElementById('main-interaction-area');
+        const controlArea = document.getElementById('control-area');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+        const modalBody = document.getElementById('modal-body');
 
         // Словарь для отображения иконок в кнопках
         const optionIcons = {
@@ -233,74 +234,48 @@
             "Острое": "🔥",
             "default": "✨"
         };
-
-        // Поток вопросов для выбора
-        const questionFlow = [
-            { key: 'preparation_ru', prompt_ru: "С чего начнем? Вы любите рамён <b>с бульоном</b> или предпочитаете <b>без бульона</b>?", options_ru: ["С бульоном", "Без бульона"], isMultiValue: false },
-            { key: 'spiceLevel_ru', prompt_ru: "Как насчет остроты? Выберите свой уровень:", options_ru: ["Не острая", "Средняя", "Острая"], isMultiValue: false },
-            { key: 'baseFlavors_ru', prompt_ru: "Отлично. А какой вкус вы ищете сегодня?", options_source: "dynamic_from_filter", isMultiValue: true } 
-        ];
-
-        // --- GIF CONFIG (URLs для разных состояний маскота) ---
-        const videoUrls = {
-            'greeting': 'https://image2url.com/gifs/1764696020110-4cd7d218-14c8-4f51-8233-14208e95f64e.gif', 
-            'questionGif': 'https://image2url.com/gifs/1764696307418-26635021-448f-4588-b4d1-acb956135531.gif',
-            'thinking': 'https://image2url.com/gifs/1764738669270-394beae2-99fc-4a8c-b4c4-b619b62d3538.gif', // <-- НОВЫЙ GIF
-            'sad': 'https://image2url.com/gifs/1764697427429-cfed7fba-170-4b06-8c30-282e093046d4.gif',
-            // Статичный плейсхолдер на случай ошибки загрузки GIF
-            'fallback': 'https://placehold.co/192x192/4f46e5/ffffff?text=Коно' 
-        };
-
-        // --- STATE (Состояние приложения) ---
-        let noodleDatabase = []; // Полная база данных
-        let isFallbackData = false; // Флаг, указывающий, используются ли резервные данные
-        let currentState = { 
-            step: 0, 
-            filters: {}, 
-            availableNoodles: [] // Блюда, которые соответствуют текущим фильтрам
-        };
         
-        // --- DOM ELEMENTS ---
-        const mainArea = document.getElementById('main-interaction-area');
-        const controlArea = document.getElementById('control-area');
-        const modalOverlay = document.getElementById('modal-overlay');
-        const modalContent = document.getElementById('modal-content');
-        const modalBody = document.getElementById('modal-body');
-        const loadingIndicator = document.getElementById('loading-indicator');
-
+        // --- ФУНКЦИЯ ПАРСИНГА CSV ---
+        function csvToJSON(csv) {
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',').map(header => header.trim());
+            const result = [];
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === '') continue;
+                // Использование регулярного выражения для обработки запятых внутри кавычек, если бы они были. 
+                // Здесь полагаемся на то, что поля не содержат запятых, т.к. это простой CSV.
+                const currentline = line.split(',');
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j]] = currentline[j] ? currentline[j].trim() : '';
+                }
+                result.push(obj);
+            }
+            return result;
+        }
 
         // --- ФУНКЦИЯ ЗАГРУЗКИ ДАННЫХ ИЗ GOOGLE SHEETS ---
         async function loadNoodleDatabase() {
-            console.log("Fetching data from Google Sheets...");
-            loadingIndicator.classList.remove('hidden');
             let fallbackUsed = false;
-
             try {
                 const response = await fetch(GOOGLE_SHEET_CSV_URL);
                 if (!response.ok) {
-                    // Если статус не 200 (например, 404), выбрасываем ошибку для перехода в catch
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const csvText = await response.text();
                 const rawData = csvToJSON(csvText);
 
-                // Преобразование и маппинг колонок
                 const mappedData = rawData.map(item => {
-                    // --- ЛОГИКА: СБОР ТОППИНГОВ ИЗ НЕСКОЛЬКИХ КОЛОНОК (Topping 1, Topping 2, ...) ---
                     const toppings = [];
-                    // Проходимся по всем ключам в объекте item
                     for (const key in item) {
-                        // Если ключ начинается с 'Topping' и его значение не пустое
                         if (key.startsWith('Topping') && item[key] && item[key].trim() !== '') {
                             toppings.push(item[key].trim());
                         }
                     }
                     
-                    // --- ЛОГИКА: Flavor теперь массив (оставлено как было для надежности) ---
                     const flavorsString = item.Flavor || '';
-                    const baseFlavors = flavorsString.split(',')
-                        .map(f => f.trim())
-                        .filter(f => f.length > 0);
+                    const baseFlavors = flavorsString.split(',').map(f => f.trim()).filter(f => f.length > 0);
 
                     return {
                         id: (item.Name || 'unknown').toLowerCase().replace(/[^a-zа-я0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 5),
@@ -308,27 +283,22 @@
                         image: item.Photo || PLACEHOLDER_IMAGE,
                         preparation_ru: item.Method || 'С бульоном', 
                         spiceLevel_ru: item.Spiciness || 'Не острая',
-                        baseFlavors_ru: baseFlavors, // Используем массив для вкусов
+                        baseFlavors_ru: baseFlavors, 
                         cookingTime_ru: item.CookingTime || '0', 
-                        toppings_ru: toppings // Используем собранный массив топпингов
+                        toppings_ru: toppings 
                     };
-                }).filter(item => item.name_ru !== 'Неизвестное блюдо'); // Фильтруем пустые строки
+                }).filter(item => item.name_ru !== 'Неизвестное блюдо'); 
                 
                 if (mappedData.length === 0) {
-                     console.warn("Mapped data is empty. Using fallback data.");
                      fallbackUsed = true;
                      return { data: FALLBACK_DATA, isFallback: fallbackUsed };
                 }
-
-                console.log("Data loaded and mapped successfully.", mappedData);
                 return { data: mappedData, isFallback: fallbackUsed };
 
             } catch (error) {
                 console.error("Failed to load data from Google Sheets. Using fallback data.", error);
                 fallbackUsed = true;
-                return { data: FALLBACK_DATA, isFallback: fallbackUsed }; // ВОЗВРАЩАЕМ РЕЗЕРВНЫЕ ДАННЫЕ В СЛУЧАЕ ЛЮБОЙ ОШИБКИ
-            } finally {
-                loadingIndicator.classList.add('hidden');
+                return { data: FALLBACK_DATA, isFallback: fallbackUsed }; 
             }
         }
         
@@ -344,9 +314,44 @@
             return btn;
         }
 
+        // --- ИНИЦИАЛИЗАЦИЯ И СКРЫТИЕ SPLASH-SCREEN ---
+        async function initializeApp() {
+            // 1. Создаем промис для минимальной продолжительности показа экрана (3000 мс = 3 секунды)
+            const minimumDisplayTime = new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // 2. Загружаем данные
+            const dataLoadPromise = loadNoodleDatabase();
+
+            // 3. Ждем, пока загрузятся данные И пройдет минимум 3 секунды
+            const [loadResult] = await Promise.all([dataLoadPromise, minimumDisplayTime]);
+            
+            noodleDatabase = loadResult.data;
+            isFallbackData = loadResult.isFallback; 
+            currentState.availableNoodles = [...noodleDatabase];
+            
+            // 4. Скрываем Splash Screen (плавное затухание)
+            splashScreen.style.opacity = '0';
+            setTimeout(() => {
+                splashScreen.classList.add('hidden');
+                // 5. Показываем основной контент с анимацией
+                mainAppContent.classList.remove('hidden');
+                mainAppContent.style.opacity = '1';
+
+                // 6. Переход к первому экрану (Приветствие или Ошибка)
+                if (noodleDatabase.length === 0) {
+                    currentState.step = -2;
+                    renderResult(); 
+                } else {
+                    currentState.step = 0;
+                    renderStartScreen(); 
+                }
+            }, 500); // 0.5 секунды для анимации fade-out
+        }
+
         // --- РЕНДЕРИНГ ЭКРАНОВ С ИСПОЛЬЗОВАНИЕМ GIF ---
         function renderStartScreen() {
-            const gifUrl = videoUrls['greeting'];
+            // Используем новый GIF для приветствия
+            const gifUrl = videoUrls['greeting']; 
             const fallbackUrl = videoUrls['fallback'];
             let warningMessage = '';
 
@@ -355,7 +360,7 @@
                 warningMessage = `
                     <div class="p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-xl mb-4 text-left fade-in">
                         <p class="font-bold">⚠️ ВНИМАНИЕ: Ошибка загрузки данных</p>
-                        <p class="text-sm">Не удалось загрузить меню по внешней ссылке Google Sheets. Отображаются старые резервные данные. Пожалуйста, убедитесь, что ссылка на таблицу корректна и опубликована в формате CSV (переменная <code>GOOGLE_SHEET_CSV_URL</code>).</p>
+                        <p class="text-sm">Не удалось загрузить меню по внешней ссылке. Отображаются старые резервные данные. Пожалуйста, убедитесь, что ссылка на таблицу корректна и опубликована в формате CSV.</p>
                     </div>
                 `;
             }
@@ -407,28 +412,24 @@
                 optionButtonsArea.appendChild(createButton(option, () => handleAnswer(question.key, option)));
             });
         }
-
-        // --- ФУНКЦИЯ МОДАЛЬНОГО ОКНА (С КОРРЕКТНЫМИ ТОПИНГАМИ) ---
+        
+        // --- ФУНКЦИЯ ДЛЯ МОДАЛЬНОГО ОКНА ---
         function openModal(noodleId) {
             const noodle = noodleDatabase.find(n => n.id === noodleId);
             if (!noodle) return;
 
-            // 1. Формируем список топпингов (с галочками - теперь должно быть корректно)
             const toppingsList = noodle.toppings_ru.length > 0 
                 ? noodle.toppings_ru.map(t => `<li class="flex items-start"><span class="mr-2 text-green-500">✅</span>${t}</li>`).join('')
                 : '<li class="text-gray-500">Любой топпинг по вашему вкусу!</li>';
             
-            // 2. Формируем список вкусов (теперь из массива)
             const flavorsTags = noodle.baseFlavors_ru.map(f => 
                 `<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium">${f}</span>`
             ).join('');
             
-            // 3. Условный блок "Обозначение"
             let designationBlock = '';
             
             if (noodle.preparation_ru === 'С бульоном') {
                  designationBlock = `
-                    <!-- БЛОК: Обозначение "С бульоном" -->
                     <div class="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm">
                         <p class="font-bold text-indigo-800 mb-1 text-sm uppercase tracking-wide flex items-center">
                             <span class="text-xl mr-2">ℹ️</span> Обозначение "С бульоном"
@@ -436,13 +437,11 @@
                         <p class="text-sm text-gray-700">
                             Это значит, что после варки лапши 
                             <b>вода полностью не сливается</b>, и рамён подается в горячем, ароматном бульоне. 
-                            Идеально для классического или острого супового рамёна.
                         </p>
                     </div>
                  `;
             } else if (noodle.preparation_ru === 'Без бульона') {
                  designationBlock = `
-                    <!-- БЛОК: Обозначение "Без бульона" -->
                     <div class="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm">
                         <p class="font-bold text-indigo-800 mb-1 text-sm uppercase tracking-wide flex items-center">
                             <span class="text-xl mr-2">ℹ️</span> Обозначение "Без бульона"
@@ -457,7 +456,6 @@
 
             const html = `
                 <div class="relative">
-                    <!-- Заголовок и Фотография -->
                     <div class="relative w-full aspect-square bg-gray-200 overflow-hidden">
                          <img src="${noodle.image}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" class="absolute inset-0 w-full h-full object-cover">
                     </div>
@@ -467,27 +465,23 @@
                         <div class="flex flex-wrap gap-2 mb-4">
                             <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-md font-medium">${noodle.preparation_ru}</span>
                             <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-md font-medium">${noodle.spiceLevel_ru}</span>
-                            <!-- Отображаем все вкусы -->
                             ${flavorsTags} 
                         </div>
                         
-                        ${designationBlock} <!-- УСЛОВНО ОТОБРАЖАЕМ БЛОК -->
+                        ${designationBlock}
 
-                        <!-- БЛОК: Режим Варки (Код) - Убран циферблат -->
                         <div class="mt-4 bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm text-center">
                             <p class="font-bold text-yellow-800 mb-2 text-sm uppercase tracking-wide">Режим Варки</p>
                             <p class="text-5xl font-extrabold text-gray-900">${noodle.cookingTime_ru}</p>
                             <p class="text-xs text-gray-500 mt-1">Это код для рамёноварки КОНО.</p>
                         </div>
 
-                        <!-- Блок Топпингов - теперь как красивый список <li> -->
                         <div class="mt-4 bg-green-50 p-4 rounded-xl border border-green-100">
                             <p class="font-bold text-green-800 mb-2 text-sm uppercase tracking-wide">Рекомендую попробовать с нашими топпингами:</p>
                             <ul class="space-y-1 text-sm text-gray-700 list-none pl-0">${toppingsList}</ul>
                         </div>
                     </div>
                     
-                    <!-- Кнопка Закрытия -->
                     <div class="p-4 bg-gray-50 border-t border-gray-100 text-center rounded-b-3xl">
                         <button onclick="closeModal()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-xl w-full transition-colors">Отлично, спасибо</button>
                     </div>
@@ -495,7 +489,6 @@
             `;
             modalBody.innerHTML = html;
             modalOverlay.classList.remove('hidden');
-            // Анимация появления модального окна
             setTimeout(() => {
                 modalOverlay.classList.remove('opacity-0');
                 modalContent.classList.remove('scale-95');
@@ -504,21 +497,18 @@
         }
 
         function closeModal() {
-            // Анимация закрытия модального окна
             modalOverlay.classList.add('opacity-0');
             modalContent.classList.remove('scale-100');
             modalContent.classList.add('scale-95');
             setTimeout(() => { modalOverlay.classList.add('hidden'); }, 300);
         }
-
-        // Закрытие модального окна при клике на оверлей
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
         // --- ЭКРАН "ДУМАЮ" ---
         function showThinkingAndRenderResults() {
             const gifUrl = videoUrls['thinking'];
             const fallbackUrl = videoUrls['fallback'];
-            // Показываем экран "Думаю"
+            
             const thinkingHTML = `
                 <div class="text-center p-8 flex flex-col items-center justify-center min-h-[300px] fade-in">
                     <div class="flex justify-center mb-6">
@@ -541,74 +531,23 @@
             setMainContent(thinkingHTML);
             renderControls(); 
 
-            // После задержки, переходим к результатам
             setTimeout(() => {
-                currentState.step = -1; // Устанавливаем статус "результаты"
+                currentState.step = -1; 
                 renderResult();
-            }, 3000); // 3 секунды паузы
+            }, 3000); 
         }
 
-        // --- ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ЭФФЕКТА КАРУСЕЛИ (оставлена для красоты) ---
-        function updateCarouselEffect() {
-            const carousel = document.getElementById('results-carousel');
-            if (!carousel) return;
-
-            const cards = carousel.querySelectorAll('.noodle-card');
-            if (cards.length === 0) return;
-
-            const carouselRect = carousel.getBoundingClientRect();
-            const carouselCenter = carouselRect.left + carouselRect.width / 2;
-
-            cards.forEach(card => {
-                const cardRect = card.getBoundingClientRect();
-                const cardCenter = cardRect.left + cardRect.width / 2;
-                
-                const distance = Math.abs(carouselCenter - cardCenter);
-                const maxDistance = cardRect.width * 1.5;
-                const normalizedDistance = Math.min(1, distance / maxDistance);
-
-                const maxScale = 1.05; 
-                const minScale = 0.85; 
-                const scale = maxScale - (normalizedDistance * (maxScale - minScale));
-
-                const opacity = 1 - (normalizedDistance * 0.3); 
-                
-                const shadowX = (1 - normalizedDistance) * 4; 
-                const shadowY = (1 - normalizedDistance) * 8; 
-                const shadowBlur = (1 - normalizedDistance) * 20; 
-                const shadowColor = `rgba(0, 0, 0, ${0.15 * (1 - normalizedDistance)})`;
-
-                card.style.transform = `scale(${scale})`;
-                card.style.opacity = opacity;
-                card.style.boxShadow = `${shadowX}px ${shadowY}px ${shadowBlur}px 0 ${shadowColor}`;
-                
-                card.style.zIndex = Math.floor(10 - normalizedDistance * 10); 
-            });
-        }
-
-
-        // --- RENDER RESULTS AS CARDS (Отображение карточек с результатами) ---
+        // --- RENDER RESULTS AS CARDS (Отображение карточек с результатами В ВИДЕ СЕТКИ) ---
         function renderResult() {
             const list = currentState.availableNoodles;
             const fallbackUrl = videoUrls['fallback'];
 
-            // Сценарий 1: Ошибка, база данных пуста (при ошибке загрузки)
-            if (noodleDatabase.length === 0) {
-                 let errorHTML = `
-                    <div class="text-center p-6 bg-red-100 border border-red-300 rounded-xl">
-                        <h2 class="text-2xl font-bold text-red-800 mb-3">⚠️ Ошибка Загрузки</h2>
-                        <p class="text-gray-700">Не удалось загрузить меню по внешней ссылке. Вы видите резервные данные.</p>
-                        <p class="text-sm text-red-500 mt-2">Пожалуйста, проверьте, что ваша ссылка на Google Sheets опубликована и корректна.</p>
-                    </div>
-                 `;
-                 setMainContent(errorHTML);
-                 renderControls();
-                 return;
-            }
-
-            // Сценарий 2: Ошибка, ничего не найдено по фильтрам
-            if (list.length === 0) {
-                 const gifUrl = videoUrls['sad'];
+            // Сценарий 1 и 2: Ошибка или ничего не найдено
+            if (noodleDatabase.length === 0 || list.length === 0) {
+                 const gifUrl = videoUrls['sad']; // Используем GIF для ошибки/нет результатов
+                 let errorTitle = (list.length === 0) ? "😭 О нет!" : "⚠️ Ошибка Загрузки";
+                 let errorText = (list.length === 0) ? "По вашим критериям ничего не нашлось. Попробуйте снова!" : "Не удалось загрузить меню. Пожалуйста, проверьте, что ваша ссылка на Google Sheets опубликована.";
+                 
                  let errorHTML = `
                     <div class="text-center p-8 fade-in">
                         <div class="flex justify-center mb-6">
@@ -618,19 +557,19 @@
                                 class="w-48 h-48 rounded-full object-cover border-4 border-red-400 p-0.5 shadow-xl" alt="Маскот Коно грустит">
                         </div>
                         <div class="bg-red-100 p-4 rounded-xl border-2 border-red-300">
-                            <h2 class="text-2xl font-bold text-red-800 mb-2">😭 О нет!</h2>
-                            <p class="text-gray-700">По вашим критериям ничего не нашлось. Попробуйте снова!</p>
+                            <h2 class="text-2xl font-bold text-red-800 mb-2">${errorTitle}</h2>
+                            <p class="text-gray-700">${errorText}</p>
                         </div>
                     </div>
                  `;
-                 currentState.step = -2; // Устанавливаем статус ошибки для отображения кнопки "Начать сначала"
+                 currentState.step = -2; 
                  setMainContent(errorHTML);
                  renderControls();
                  return;
             }
 
-            // Сценарий 3: Успешный результат
-            const gifUrl = videoUrls['greeting']; // Используем greeting для успеха
+            // Сценарий 3: Успешный результат (Отображаем сетку)
+            const gifUrl = videoUrls['greeting'];
             let resultHTML = `
                 <div class="text-center mb-6 fade-in">
                     <div class="flex justify-center mb-4">
@@ -640,41 +579,32 @@
                             class="w-32 h-32 rounded-full object-cover border-4 border-green-300 p-0.5 shadow-lg" alt="Маскот Коно рад">
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800">Готово! Вот что я нашел:</h2>
-                    <p class="text-sm text-gray-500 mt-1">Пролистайте (свайп влево/вправо), чтобы увидеть все варианты. Нажмите на карточку для деталей.</p>
+                    <p class="text-sm text-gray-500 mt-1">Нажмите на карточку, чтобы увидеть детали и код варки.</p>
                 </div>
                 
-                <!-- Контейнер для центрирования прокручиваемых элементов (добавляет padding-x для центровки первой/последней карточки) -->
-                <div class="relative overflow-hidden -mx-6 fade-in">
-                    <div id="results-carousel" class="flex overflow-x-scroll space-x-4 pb-4 pl-6 pr-6">
+                <!-- Адаптивная СЕТКА для результатов -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 fade-in">
             `;
 
             list.forEach(noodle => {
-                // Формируем теги для вкусов (из массива)
-                const flavorTags = noodle.baseFlavors_ru.map(f => 
+                const flavorTags = noodle.baseFlavors_ru.slice(0, 2).map(f => // Показываем только 2 тега, чтобы не перегружать сетку
                     `<span class="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">${f}</span>`
                 ).join('');
 
-                // Добавлен класс snap-center для прилипания к центру
                 resultHTML += `
-                    <div class="glass-card rounded-xl overflow-hidden flex-shrink-0 snap-center w-11/12 sm:w-80 p-3 noodle-card" onclick="openModal('${noodle.id}')">
-                         <!-- Обновленная горизонтальная компоновка внутри карточки -->
+                    <div class="glass-card rounded-xl overflow-hidden p-3 noodle-card-grid" onclick="openModal('${noodle.id}')">
                          <div class="flex items-center w-full">
-                            <!-- Изображение: фиксированный квадрат 64x64px -->
                             <div class="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden mr-4"> 
                                 <img src="${noodle.image}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';" class="w-full h-full object-cover">
                             </div>
-                            
-                            <!-- Текстовая область -->
                             <div class="flex-grow min-w-0"> 
-                                <h3 class="font-bold text-gray-800 text-base leading-tight truncate">${noodle.name_ru}</h3>
+                                <h3 class="font-bold text-gray-800 text-base leading-tight">${noodle.name_ru}</h3>
                                 <div class="flex flex-wrap gap-1 mt-1">
                                     <span class="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-medium">${noodle.spiceLevel_ru}</span>
-                                    <span class="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">${noodle.preparation_ru}</span>
                                     ${flavorTags}
                                 </div>
                             </div>
-                            
-                            <!-- Стрелка-индикатор -->
+                            <!-- Иконка для кликабельности -->
                             <svg class="flex-shrink-0 ml-3 h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
@@ -683,100 +613,38 @@
                 `;
             });
             
-            resultHTML += `</div></div><div class="h-12"></div>`; // Закрываем контейнеры и добавляем отступ
+            resultHTML += `</div>`; 
             setMainContent(resultHTML);
-            
-            // --- ЛОГИКА ДЛЯ ЭФФЕКТА КАРУСЕЛИ ---
-            const carouselElement = document.getElementById('results-carousel');
-            if (carouselElement) {
-                // Вычисление и применение padding для центрирования
-                const appContainer = document.getElementById('main-app-content');
-                if (appContainer) {
-                    const appWidth = appContainer.offsetWidth - (6 * 2); 
-                    const cardWidth = Math.min(320, appWidth * 0.9); 
-                    const paddingNeeded = (appWidth / 2) - (cardWidth / 2);
-
-                    carouselElement.style.paddingLeft = `${paddingNeeded}px`;
-                    carouselElement.style.paddingRight = `${paddingNeeded}px`;
-                    carouselElement.style.marginLeft = `-${paddingNeeded}px`; 
-
-                    carouselElement.querySelectorAll('.noodle-card').forEach(card => {
-                        card.style.width = `${cardWidth}px`;
-                    });
-                }
-                
-                // Инициализация и слушатели событий
-                updateCarouselEffect();
-                carouselElement.addEventListener('scroll', updateCarouselEffect);
-                window.addEventListener('resize', updateCarouselEffect);
-                setTimeout(updateCarouselEffect, 100); 
-            }
-            
             renderControls();
         }
-
+        
         // --- CONTROL BUTTONS (Отображение кнопок управления) ---
         function renderControls() {
             controlArea.innerHTML = '';
             let button;
-            // Кнопка "Начать выбор" только на стартовом экране
             if (currentState.step === 0) {
                 button = createButton('Начать выбор', () => {
                     currentState.step = 1;
                     startNextStep();
                 }, 'bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-full w-full user-button flex items-center justify-center');
-            // Кнопка "Начать сначала" на экранах результатов и ошибки
             } else if (currentState.step < 0) {
                  button = createButton('Начать сначала', restart, 'bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-full user-button flex items-center justify-center');
             } 
             if (button) controlArea.appendChild(button);
         }
 
-        // Обновленная функция startGreeting: загрузка данных и показ приветствия
-        async function startGreeting() {
-            const mainContent = document.getElementById('main-app-content');
-            
-            // 1. Сразу показываем главный контент и индикатор загрузки
-            mainContent.classList.remove('hidden');
-            loadingIndicator.classList.remove('hidden');
-            setMainContent(''); 
-
-            // 2. Загружаем данные
-            const loadResult = await loadNoodleDatabase(); // Получаем объект с данными и статусом
-            noodleDatabase = loadResult.data;
-            isFallbackData = loadResult.isFallback; // Устанавливаем глобальный флаг
-            currentState.availableNoodles = [...noodleDatabase];
-            
-            // 3. Скрываем индикатор
-            loadingIndicator.classList.add('hidden');
-
-            if (noodleDatabase.length === 0) {
-                // Если база данных пуста (даже резервная), показываем экран ошибки
-                currentState.step = -2;
-                renderResult(); 
-            } else {
-                // Иначе показываем стартовый экран
-                currentState.step = 0;
-                renderStartScreen(); 
-            }
-        }
-
-        // Обработка ответа пользователя на вопрос
+        // Обработка ответа пользователя
         function handleAnswer(key, value) {
-            setMainContent(''); // Очищаем область контента для плавного перехода
+            setMainContent(''); 
             currentState.filters[key] = value;
             
-            // Находим текущий вопрос, чтобы узнать, мультизначное ли это поле
             const question = questionFlow.find(q => q.key === key);
 
-            // Применяем фильтр к оставшимся блюдам
             if (question && question.isMultiValue) {
-                // Мультизначное поле (Вкусы): проверяем, включает ли массив блюда выбранное значение
                 currentState.availableNoodles = currentState.availableNoodles.filter(noodle => 
                     noodle[key].includes(value)
                 );
             } else {
-                // Однозначное поле (Способ приготовления, Острота): строгая проверка
                 currentState.availableNoodles = currentState.availableNoodles.filter(noodle => 
                     noodle[key] === value
                 );
@@ -788,14 +656,12 @@
 
         // Переход к следующему шагу (вопросу или результатам)
         function startNextStep() {
-            // Если после фильтрации ничего не осталось
             if (currentState.availableNoodles.length === 0) {
                 currentState.step = -2;
                 renderResult(); 
                 return;
             }
 
-            // Если все вопросы заданы, переходим к экрану "Думаю"
             if (currentState.step > questionFlow.length) {
                 showThinkingAndRenderResults(); 
                 return;
@@ -804,20 +670,16 @@
             const currentQuestion = questionFlow[currentState.step - 1];
             let options = currentQuestion.options_ru;
             
-            // Динамическая фильтрация опций (например, для вкуса)
             if (currentQuestion.options_source === "dynamic_from_filter") {
                 if (currentQuestion.isMultiValue) {
-                    // Мультизначное поле: собираем все уникальные вкусы из всех оставшихся блюд
                     const allFlavors = currentState.availableNoodles.flatMap(n => n[currentQuestion.key]);
                     options = [...new Set(allFlavors)].sort(); 
                 } else {
-                    // Однозначное поле: собираем уникальные значения
                     const remainingValues = [...new Set(currentState.availableNoodles.map(n => n[currentQuestion.key]))];
                     options = remainingValues.sort(); 
                 }
             }
 
-            // Если доступных опций нет, это ошибка фильтрации
             if (options.length === 0) {
                 currentState.step = -2;
                 renderResult();
@@ -826,24 +688,21 @@
 
             // Если остался только один вариант, пропускаем вопрос и переходим к следующему шагу
             if (options.length === 1 && currentState.step < questionFlow.length) {
-                // Применяем единственный оставшийся фильтр автоматически
                 handleAnswer(currentQuestion.key, options[0]); 
-                return; // Выходим, так как handleAnswer вызовет startNextStep снова
+                return;
             } 
             
-            // Если вариантов больше одного, показываем вопрос
             renderQuestionStep(currentQuestion, options);
         }
 
         // Сброс состояния и начало заново
         function restart() {
             currentState = { step: 0, filters: {}, availableNoodles: [] };
-            // При рестарте вызываем startGreeting для повторной попытки загрузки данных
-            startGreeting(); 
+            initializeApp(); 
         }
 
         // Запуск приложения после загрузки DOM
-        document.addEventListener('DOMContentLoaded', startGreeting);
+        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
