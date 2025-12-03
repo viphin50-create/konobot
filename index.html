@@ -245,7 +245,7 @@
         const videoUrls = {
             'greeting': 'https://image2url.com/gifs/1764696020110-4cd7d218-14c8-4f51-8233-14208e95f64e.gif', 
             'questionGif': 'https://image2url.com/gifs/1764696307418-26635021-448f-4588-b4d1-acb956135531.gif',
-            'thinking': 'https://c.tenor.com/tHqW3hG0b-QAAAAC/loading-thinking.gif', 
+            'thinking': 'https://image2url.com/gifs/1764738669270-394beae2-99fc-4a8c-b4c4-b619b62d3538.gif', // <-- НОВЫЙ GIF
             'sad': 'https://image2url.com/gifs/1764697427429-cfed7fba-170-4b06-8c30-282e093046d4.gif',
             // Статичный плейсхолдер на случай ошибки загрузки GIF
             'fallback': 'https://placehold.co/192x192/4f46e5/ffffff?text=Коно' 
@@ -286,31 +286,21 @@
 
                 // Преобразование и маппинг колонок
                 const mappedData = rawData.map(item => {
-                    // Используем столбцы Name, Photo, Method, Spiciness, Flavor, CookingTime, Toppings
-                    const toppingsString = item.Toppings || '';
-                    const flavorsString = item.Flavor || '';
+                    // --- ЛОГИКА: СБОР ТОППИНГОВ ИЗ НЕСКОЛЬКИХ КОЛОНОК (Topping 1, Topping 2, ...) ---
+                    const toppings = [];
+                    // Проходимся по всем ключам в объекте item
+                    for (const key in item) {
+                        // Если ключ начинается с 'Topping' и его значение не пустое
+                        if (key.startsWith('Topping') && item[key] && item[key].trim() !== '') {
+                            toppings.push(item[key].trim());
+                        }
+                    }
                     
-                    // --- ЛОГИКА: Flavor и Toppings теперь всегда массивы ---
-                    // Разделяем по запятой и чистим пробелы.
+                    // --- ЛОГИКА: Flavor теперь массив (оставлено как было для надежности) ---
+                    const flavorsString = item.Flavor || '';
                     const baseFlavors = flavorsString.split(',')
                         .map(f => f.trim())
                         .filter(f => f.length > 0);
-                    
-                    const toppings = toppingsString.split(',')
-                        .map(t => t.trim())
-                        .filter(t => t.length > 0);
-                    
-                    // ==========================================================
-                    // === ОТЛАДОЧНЫЙ ЛОГ ДЛЯ Toppings (поможет найти проблему) ===
-                    // ==========================================================
-                    if (toppingsString.includes(',')) {
-                        // Если запятая есть, выводим что получилось
-                        console.log(`DEBUG Toppings for ${item.Name || 'Unknown'}: Raw="${toppingsString}", Parsed=[${toppings.join('; ')}]`);
-                    } else if (toppingsString.length > 0) {
-                        // Если запятой нет, предупреждаем, что разделитель может быть неверным
-                        console.warn(`DEBUG Toppings for ${item.Name || 'Unknown'}: Raw string found but no comma separator: "${toppingsString}". Check your Google Sheet column separator.`);
-                    }
-
 
                     return {
                         id: (item.Name || 'unknown').toLowerCase().replace(/[^a-zа-я0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 5),
@@ -320,7 +310,7 @@
                         spiceLevel_ru: item.Spiciness || 'Не острая',
                         baseFlavors_ru: baseFlavors, // Используем массив для вкусов
                         cookingTime_ru: item.CookingTime || '0', 
-                        toppings_ru: toppings // Используем массив для топингов
+                        toppings_ru: toppings // Используем собранный массив топпингов
                     };
                 }).filter(item => item.name_ru !== 'Неизвестное блюдо'); // Фильтруем пустые строки
                 
