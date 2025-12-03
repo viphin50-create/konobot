@@ -67,10 +67,6 @@
             transform: scale(0.9); 
             box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
         }
-        .noodle-card:hover {
-            /* Убираем hover эффект сдвига, так как трансформация управляется JS */
-            /* transform: translateY(-2px); */ 
-        }
         
         /* Стили для карусели результатов */
         #results-carousel {
@@ -179,9 +175,9 @@
                 image: 'https://placehold.co/100x100/EF4444/FFFFFF?text=Shin',
                 preparation_ru: 'С бульоном', 
                 spiceLevel_ru: 'Средняя',
-                baseFlavor_ru: 'Говядина',
+                baseFlavors_ru: ['Говядина', 'Классика'], // Обновлено до массива
                 cookingTime_ru: '5', 
-                toppings_ru: ['Яйцо', 'Кимчи', 'Зеленый лук']
+                toppings_ru: ['Яйцо', 'Кимчи', 'Зеленый лук'] // Корректный массив топингов
             },
             {
                 id: 'buldak_2x_fallback',
@@ -189,9 +185,9 @@
                 image: 'https://placehold.co/100x100/F97316/FFFFFF?text=Buldak',
                 preparation_ru: 'Без бульона', 
                 spiceLevel_ru: 'Острая',
-                baseFlavor_ru: 'Курица',
+                baseFlavors_ru: ['Курица', 'Острое'], // Обновлено до массива
                 cookingTime_ru: '15', 
-                toppings_ru: ['Сыр', 'Кунжут', 'Нори']
+                toppings_ru: ['Сыр', 'Кунжут', 'Нори'] // Корректный массив топингов
             },
             {
                 id: 'jjapagetti_fallback',
@@ -199,9 +195,9 @@
                 image: 'https://placehold.co/100x100/4B5563/FFFFFF?text=Jjap',
                 preparation_ru: 'Без бульона', 
                 spiceLevel_ru: 'Не острая',
-                baseFlavor_ru: 'Черные бобы',
+                baseFlavors_ru: ['Черные бобы', 'Паста'], // Обновлено до массива
                 cookingTime_ru: '7', 
-                toppings_ru: ['Огурцы', 'Масло']
+                toppings_ru: ['Огурцы', 'Масло', 'Говядина'] // Корректный массив топингов
             }
         ];
 
@@ -216,10 +212,7 @@
                 const line = lines[i].trim();
                 if (line === '') continue;
 
-                // Для корректного парсинга полей, содержащих запятые,
-                // необходимо использовать более сложный парсер или убедиться,
-                // что CSV-данные не содержат незаэкранированных запятых внутри полей.
-                // Для простоты оставим split(','), но это может быть источником ошибок.
+                // Используем простую логику split, так как данные хранятся в простом формате
                 const currentline = line.split(',');
 
                 const obj = {};
@@ -235,22 +228,24 @@
         const optionIcons = {
             "С бульоном": "🍲", "Без бульона": "🍜",
             "Не острая": "🟢", "Средняя": "🌶️🌶️", "Острая": "🌶️🌶️🌶️",
-            "Черные бобы": "⚫", "Морепродукты": "🦐", "Кимчи": "🥬", "Курица": "🍗", "Говядина": "🥩", "Паста": "🍝", "Карбонара": "🧀",
+            "Черные бобы": "⚫", "Морепродукты": "🦐", "Кимчи": "🥬", "Курица": "🍗", 
+            "Говядина": "🥩", "Паста": "🍝", "Карбонара": "🧀", "Классика": "✨",
+            "Острое": "🔥",
             "default": "✨"
         };
 
         // Поток вопросов для выбора
         const questionFlow = [
-            { key: 'preparation_ru', prompt_ru: "С чего начнем? Вы любите рамён <b>с бульоном</b> или предпочитаете <b>без бульона</b>?", options_ru: ["С бульоном", "Без бульона"] },
-            { key: 'spiceLevel_ru', prompt_ru: "Как насчет остроты? Выберите свой уровень:", options_ru: ["Не острая", "Средняя", "Острая"] },
-            { key: 'baseFlavor_ru', prompt_ru: "Отлично. А какой вкус вы ищете сегодня?", options_source: "dynamic_from_filter" }
+            { key: 'preparation_ru', prompt_ru: "С чего начнем? Вы любите рамён <b>с бульоном</b> или предпочитаете <b>без бульона</b>?", options_ru: ["С бульоном", "Без бульона"], isMultiValue: false },
+            { key: 'spiceLevel_ru', prompt_ru: "Как насчет остроты? Выберите свой уровень:", options_ru: ["Не острая", "Средняя", "Острая"], isMultiValue: false },
+            { key: 'baseFlavors_ru', prompt_ru: "Отлично. А какой вкус вы ищете сегодня?", options_source: "dynamic_from_filter", isMultiValue: true } 
         ];
 
         // --- GIF CONFIG (URLs для разных состояний маскота) ---
         const videoUrls = {
             'greeting': 'https://image2url.com/gifs/1764696020110-4cd7d218-14c8-4f51-8233-14208e95f64e.gif', 
             'questionGif': 'https://image2url.com/gifs/1764696307418-26635021-448f-4588-b4d1-acb956135531.gif',
-            'thinking': 'https://image2url.com/gifs/1764697051373-6b6eb9f1-8bde-4b79-b965-f4d1bd98a068.gif',
+            'thinking': 'https://c.tenor.com/tHqW3hG0b-QAAAAC/loading-thinking.gif', 
             'sad': 'https://image2url.com/gifs/1764697427429-cfed7fba-170-4b06-8c30-282e093046d4.gif',
             // Статичный плейсхолдер на случай ошибки загрузки GIF
             'fallback': 'https://placehold.co/192x192/4f46e5/ffffff?text=Коно' 
@@ -293,16 +288,39 @@
                 const mappedData = rawData.map(item => {
                     // Используем столбцы Name, Photo, Method, Spiciness, Flavor, CookingTime, Toppings
                     const toppingsString = item.Toppings || '';
+                    const flavorsString = item.Flavor || '';
                     
+                    // --- ЛОГИКА: Flavor и Toppings теперь всегда массивы ---
+                    // Разделяем по запятой и чистим пробелы.
+                    const baseFlavors = flavorsString.split(',')
+                        .map(f => f.trim())
+                        .filter(f => f.length > 0);
+                    
+                    const toppings = toppingsString.split(',')
+                        .map(t => t.trim())
+                        .filter(t => t.length > 0);
+                    
+                    // ==========================================================
+                    // === ОТЛАДОЧНЫЙ ЛОГ ДЛЯ Toppings (поможет найти проблему) ===
+                    // ==========================================================
+                    if (toppingsString.includes(',')) {
+                        // Если запятая есть, выводим что получилось
+                        console.log(`DEBUG Toppings for ${item.Name || 'Unknown'}: Raw="${toppingsString}", Parsed=[${toppings.join('; ')}]`);
+                    } else if (toppingsString.length > 0) {
+                        // Если запятой нет, предупреждаем, что разделитель может быть неверным
+                        console.warn(`DEBUG Toppings for ${item.Name || 'Unknown'}: Raw string found but no comma separator: "${toppingsString}". Check your Google Sheet column separator.`);
+                    }
+
+
                     return {
                         id: (item.Name || 'unknown').toLowerCase().replace(/[^a-zа-я0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 5),
                         name_ru: item.Name || 'Неизвестное блюдо',
                         image: item.Photo || PLACEHOLDER_IMAGE,
-                        preparation_ru: item.Method || 'С бульоном', // Используем этот ключ для фильтрации и модального окна
+                        preparation_ru: item.Method || 'С бульоном', 
                         spiceLevel_ru: item.Spiciness || 'Не острая',
-                        baseFlavor_ru: item.Flavor || 'Базовый вкус',
-                        cookingTime_ru: item.CookingTime || '0', // Теперь это просто код/число
-                        toppings_ru: toppingsString.split(',').map(t => t.trim()).filter(t => t.length > 0)
+                        baseFlavors_ru: baseFlavors, // Используем массив для вкусов
+                        cookingTime_ru: item.CookingTime || '0', 
+                        toppings_ru: toppings // Используем массив для топингов
                     };
                 }).filter(item => item.name_ru !== 'Неизвестное блюдо'); // Фильтруем пустые строки
                 
@@ -336,7 +354,7 @@
             return btn;
         }
 
-        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавлен onerror для GIF ---
+        // --- РЕНДЕРИНГ ЭКРАНОВ С ИСПОЛЬЗОВАНИЕМ GIF ---
         function renderStartScreen() {
             const gifUrl = videoUrls['greeting'];
             const fallbackUrl = videoUrls['fallback'];
@@ -370,7 +388,6 @@
             renderControls();
         }
 
-        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавлен onerror для GIF ---
         function renderQuestionStep(question, options) {
             const gifUrl = videoUrls['questionGif']; 
             const fallbackUrl = videoUrls['fallback'];
@@ -401,17 +418,22 @@
             });
         }
 
-        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ МОДАЛЬНОГО ОКНА ---
+        // --- ФУНКЦИЯ МОДАЛЬНОГО ОКНА (С КОРРЕКТНЫМИ ТОПИНГАМИ) ---
         function openModal(noodleId) {
             const noodle = noodleDatabase.find(n => n.id === noodleId);
             if (!noodle) return;
 
-            // 1. Формируем список топпингов
+            // 1. Формируем список топпингов (с галочками - теперь должно быть корректно)
             const toppingsList = noodle.toppings_ru.length > 0 
-                ? noodle.toppings_ru.map(t => `<li class="flex items-start"><span class="mr-2 text-green-500">✓</span>${t}</li>`).join('')
+                ? noodle.toppings_ru.map(t => `<li class="flex items-start"><span class="mr-2 text-green-500">✅</span>${t}</li>`).join('')
                 : '<li class="text-gray-500">Любой топпинг по вашему вкусу!</li>';
             
-            // 2. Условный блок "Обозначение"
+            // 2. Формируем список вкусов (теперь из массива)
+            const flavorsTags = noodle.baseFlavors_ru.map(f => 
+                `<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium">${f}</span>`
+            ).join('');
+            
+            // 3. Условный блок "Обозначение"
             let designationBlock = '';
             
             if (noodle.preparation_ru === 'С бульоном') {
@@ -455,7 +477,8 @@
                         <div class="flex flex-wrap gap-2 mb-4">
                             <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-md font-medium">${noodle.preparation_ru}</span>
                             <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-md font-medium">${noodle.spiceLevel_ru}</span>
-                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium">${noodle.baseFlavor_ru}</span>
+                            <!-- Отображаем все вкусы -->
+                            ${flavorsTags} 
                         </div>
                         
                         ${designationBlock} <!-- УСЛОВНО ОТОБРАЖАЕМ БЛОК -->
@@ -467,10 +490,10 @@
                             <p class="text-xs text-gray-500 mt-1">Это код для рамёноварки КОНО.</p>
                         </div>
 
-                        <!-- Блок Топпингов -->
+                        <!-- Блок Топпингов - теперь как красивый список <li> -->
                         <div class="mt-4 bg-green-50 p-4 rounded-xl border border-green-100">
                             <p class="font-bold text-green-800 mb-2 text-sm uppercase tracking-wide">Рекомендую попробовать с нашими топпингами:</p>
-                            <ul class="space-y-1 text-sm text-gray-700">${toppingsList}</ul>
+                            <ul class="space-y-1 text-sm text-gray-700 list-none pl-0">${toppingsList}</ul>
                         </div>
                     </div>
                     
@@ -501,7 +524,7 @@
         // Закрытие модального окна при клике на оверлей
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
-        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавлен onerror для GIF ---
+        // --- ЭКРАН "ДУМАЮ" ---
         function showThinkingAndRenderResults() {
             const gifUrl = videoUrls['thinking'];
             const fallbackUrl = videoUrls['fallback'];
@@ -535,7 +558,7 @@
             }, 3000); // 3 секунды паузы
         }
 
-        // --- ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ЭФФЕКТА КАРУСЕЛИ ---
+        // --- ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ЭФФЕКТА КАРУСЕЛИ (оставлена для красоты) ---
         function updateCarouselEffect() {
             const carousel = document.getElementById('results-carousel');
             if (!carousel) return;
@@ -575,12 +598,11 @@
 
 
         // --- RENDER RESULTS AS CARDS (Отображение карточек с результатами) ---
-        // --- ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавлен onerror для GIF ---
         function renderResult() {
             const list = currentState.availableNoodles;
             const fallbackUrl = videoUrls['fallback'];
 
-            // Сценарий 1: Ошибка, база данных пуста
+            // Сценарий 1: Ошибка, база данных пуста (при ошибке загрузки)
             if (noodleDatabase.length === 0) {
                  let errorHTML = `
                     <div class="text-center p-6 bg-red-100 border border-red-300 rounded-xl">
@@ -637,6 +659,11 @@
             `;
 
             list.forEach(noodle => {
+                // Формируем теги для вкусов (из массива)
+                const flavorTags = noodle.baseFlavors_ru.map(f => 
+                    `<span class="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">${f}</span>`
+                ).join('');
+
                 // Добавлен класс snap-center для прилипания к центру
                 resultHTML += `
                     <div class="glass-card rounded-xl overflow-hidden flex-shrink-0 snap-center w-11/12 sm:w-80 p-3 noodle-card" onclick="openModal('${noodle.id}')">
@@ -653,6 +680,7 @@
                                 <div class="flex flex-wrap gap-1 mt-1">
                                     <span class="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-medium">${noodle.spiceLevel_ru}</span>
                                     <span class="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">${noodle.preparation_ru}</span>
+                                    ${flavorTags}
                                 </div>
                             </div>
                             
@@ -747,8 +775,23 @@
         function handleAnswer(key, value) {
             setMainContent(''); // Очищаем область контента для плавного перехода
             currentState.filters[key] = value;
+            
+            // Находим текущий вопрос, чтобы узнать, мультизначное ли это поле
+            const question = questionFlow.find(q => q.key === key);
+
             // Применяем фильтр к оставшимся блюдам
-            currentState.availableNoodles = currentState.availableNoodles.filter(noodle => noodle[key] === value);
+            if (question && question.isMultiValue) {
+                // Мультизначное поле (Вкусы): проверяем, включает ли массив блюда выбранное значение
+                currentState.availableNoodles = currentState.availableNoodles.filter(noodle => 
+                    noodle[key].includes(value)
+                );
+            } else {
+                // Однозначное поле (Способ приготовления, Острота): строгая проверка
+                currentState.availableNoodles = currentState.availableNoodles.filter(noodle => 
+                    noodle[key] === value
+                );
+            }
+
             currentState.step++;
             startNextStep();
         }
@@ -773,9 +816,15 @@
             
             // Динамическая фильтрация опций (например, для вкуса)
             if (currentQuestion.options_source === "dynamic_from_filter") {
-                // Извлекаем уникальные значения ключа (вкуса) из оставшихся блюд
-                const remainingFlavors = [...new Set(currentState.availableNoodles.map(n => n[currentQuestion.key]))];
-                options = remainingFlavors.sort(); 
+                if (currentQuestion.isMultiValue) {
+                    // Мультизначное поле: собираем все уникальные вкусы из всех оставшихся блюд
+                    const allFlavors = currentState.availableNoodles.flatMap(n => n[currentQuestion.key]);
+                    options = [...new Set(allFlavors)].sort(); 
+                } else {
+                    // Однозначное поле: собираем уникальные значения
+                    const remainingValues = [...new Set(currentState.availableNoodles.map(n => n[currentQuestion.key]))];
+                    options = remainingValues.sort(); 
+                }
             }
 
             // Если доступных опций нет, это ошибка фильтрации
@@ -787,11 +836,9 @@
 
             // Если остался только один вариант, пропускаем вопрос и переходим к следующему шагу
             if (options.length === 1 && currentState.step < questionFlow.length) {
-                currentState.filters[currentQuestion.key] = options[0];
-                currentState.availableNoodles = currentState.availableNoodles.filter(noodle => noodle[currentQuestion.key] === options[0]);
-                currentState.step++;
-                startNextStep();
-                return;
+                // Применяем единственный оставшийся фильтр автоматически
+                handleAnswer(currentQuestion.key, options[0]); 
+                return; // Выходим, так как handleAnswer вызовет startNextStep снова
             } 
             
             // Если вариантов больше одного, показываем вопрос
